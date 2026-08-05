@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block contenido %}
+<div style="width: 100%; max-width: 900px; margin: 30px auto; padding: 20px;">
+    
+    <!-- 👤 Saludo Personalizado Superior -->
+    <div style="background-color: #1a1a1a; padding: 25px; border-radius: 8px; border-left: 4px solid rgb(201, 39, 39); margin-bottom: 25px;">
+        <h2 style="color: #fff; margin: 0; font-size: 1.8rem;">💈 ¡Bienvenid@, <span style="color: rgb(201, 39, 39);">{{ cliente }}</span>!</h2>
+        <p style="color: #aaa; margin: 5px 0 0 0; font-size: 0.95rem;">Este es tu panel privado de Usme Barber Top. Desde aquí puedes gestionar tus turnos.</p>
+    </div>
+
+    <!-- 🗂️ Contenedor de dos Columnas -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+        
+        <!-- Columna Izquierda: Agendar Cita -->
+        <div style="background-color: #1a1a1a; padding: 20px; border-radius: 8px; border-top: 3px solid rgb(201, 39, 39);">
+            <h3 style="color: rgb(201, 39, 39); margin-top: 0; margin-bottom: 15px;">📅 Agendar una Cita</h3>
+            <p style="color: #ccc; font-size: 0.9rem; line-height: 1.5;">Reserva tu espacio con tu barbero favorito en un segundo de forma digital.</p>
+            <a href="#" style="display: inline-block; background-color: rgb(201, 39, 39); color: white; text-decoration: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; margin-top: 10px; font-size: 0.9rem;">
+                SOLICITAR TURNO ✂️
+            </a>
+        </div>
+
+        <!-- Columna Derecha: Nuestro Equipo (¡Aquí reubicamos tus barberos!) -->
+        <div style="background-color: #1a1a1a; padding: 20px; border-radius: 8px; border-top: 3px solid #fff;">
+            <h3 style="color: #fff; margin-top: 0; margin-bottom: 15px;">💈 Barberos Disponibles</h3>
+            <div style="max-height: 200px; overflow-y: auto; padding-right: 5px;">
+                {% for b in barberos %}
+                    <div style="background-color: #111; padding: 10px; border-radius: 4px; margin-bottom: 10px; border-left: 2px solid rgb(201, 39, 39);">
+                        <strong style="color: #fff; font-size: 0.95rem;">🔥 Barbero Estrella #{{ b.id_barbero }}</strong><br>
+                        <span style="color: #aaa; font-size: 0.85rem;">Especialidad: {{ b.especialidad }}</span><br>
+                        <span style="color: #666; font-size: 0.8rem;">Experiencia: {{ b.experiencia_anios }} años</span>
+                    </div>
+                {% empty %}
+                    <p style="color: #666; font-size: 0.9rem;">No hay barberos activos en este momento.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

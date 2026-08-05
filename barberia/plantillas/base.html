@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usme Barber Top</title>
+    <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+</head>
+<body> 
+    
+    <!-- Tu barra de navegación con tu botón de login -->
+    <div class="nav">
+        <a href="/inicio/">
+           <!-- <img src="{% static 'imagenes/logo.png' %}" alt="Logo" style="height: 85px; width: auto;">-->
+        </a>
+        <div class="nav-links">
+            <a href="/inicio/">🏠 INICIO</a>
+            
+             <!-- 💡 SI LA SESIÓN ESTÁ ACTIVA, MUESTRA CERRAR SESIÓN -->
+            {% if sesion_activa %}
+                <a href="/inicio/" style="color: rgb(201, 39, 39); font-weight: bold;">🚪 CERRAR SESIÓN</a>
+            {% else %}
+                <!-- SI NO HAY SESIÓN, MUESTRA EL MENÚ NORMAL -->
+                <a href="/login/">👤 ABRIR SESIÓN / REGISTRARSE</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- 🕳️ El agujero mágico donde se meterá el contenido dinámico -->
+    <div class="body-container">
+        {% block contenido %}
+        {% endblock %}
+    </div>
+
+    <!-- Tu Pie de página original con los links interconectados -->
+    <div class="footer">
+        <a href="/inicio/">✄ © 2026 Usme Barber Top - Sistema de gestión de citas.</a>
+        <a href="/contacto/"> Barbería en Medellín 📍 </a>
+        <a href="/contacto/">💈 Contáctenos</a> 
+    </div>
+
+</body>
+</html>

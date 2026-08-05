@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block contenido %}
+    <div class="izquierda">
+        <h1>✂️ USME BARBER</h1>
+        <!-- Tu imagen premium con el brillo rojo difuminado -->
+        <img src="{% static 'imagenes/corte.png' %}" alt="Principal">
+    </div>
+    
+    <div class="derecha">
+        <!-- Tus eslóganes oficiales -->
+        <h3>📈 Lleva tu estilo al siguiente nivel.</h3>
+        <h3>💈 Haz que tu corte sea una experiencia única.</h3>
+        <h3>📞 +57 323 6214485</h3>
+        
+        <!-- Tu sección comercial de Servicios Frecuentados -->
+        <div style="margin-top: 30px; text-align: left; width: 100%; max-width: 380px; background-color: #1a1a1a; padding: 20px; border-radius: 8px; border-left: 4px solid rgb(201, 39, 39);">
+            <h4 style="color: rgb(201, 39, 39); margin-bottom: 12px; font-size: 1.1rem; letter-spacing: 0.5px;">🔥 LOS MÁS PEDIDOS:</h4>
+            
+            <p style="font-size: 1rem; color: #fff; line-height: 1.6;">
+                {% for item in servicios %} 
+                    ⭐ <strong>{{ item.nombre_servicio }}</strong><br>
+                    <span style="color: #aaa; font-size: 0.85rem;">{{ item.descripcion }}</span><br><br>
+                {% empty %}
+                    <span style="color: #666;">No hay servicios sugeridos en este momento.</span>
+                {% endfor %}
+            </p>
+        </div>
+    </div>
+{% endblock %}

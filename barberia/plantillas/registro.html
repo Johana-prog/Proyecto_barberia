@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div style="max-width: 450px; margin: 40px auto; background-color: #1a1a1a; padding: 30px; border-radius: 8px; border-top: 4px solid rgb(201, 39, 39); box-shadow: 0 8px 24px rgba(201, 39, 39, 0.2);">
+    
+    <h2 style="color: rgb(201, 39, 39); text-align: center; margin-bottom: 20px; font-size: 1.8rem;">📝 REGISTRO DE CLIENTE</h2>
+
+        <!-- 💡 Si el mesero manda un mensaje de éxito, lo pintamos aquí en verde brillante -->
+    {% if mensaje %}
+        <div style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold; border: 1px solid #2ecc71;">
+            {{ mensaje }}
+        </div>
+    {% endif %}
+
+    
+    <!-- ✉️ Aquí usamos el método POST (el sobre sellado) -->
+    <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+        <!-- 🛡️ Este es un candado obligatorio de Django para que nadie robe los datos -->
+        {% csrf_token %}
+
+        <div>
+            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Nombre:</label>
+            <input type="text" name="nombre" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+        </div>
+
+        <div>
+            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Apellido:</label>
+            <input type="text" name="apellido" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+        </div>
+
+        <div>
+            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Documento (Cédula):</label>
+            <input type="text" name="documento" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+        </div>
+
+        <div>
+            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Correo Electrónico:</label>
+            <input type="email" name="correo" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+        </div>
+
+        <div>
+            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Contraseña:</label>
+            <input type="password" name="contraseña" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+        </div>
+
+        <button type="submit" style="background-color: rgb(201, 39, 39); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; transition: 0.3s;">
+            CREAR CUENTA 💈
+        </button>
+    </form>
+</div>
+{% endblock %}
