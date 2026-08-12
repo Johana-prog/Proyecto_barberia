@@ -40,5 +40,8 @@ urlpatterns = [
     path('registro/', views.registrar_cliente, name='registro'),
 
     path('login/', views.iniciar_sesion, name='login'),
+
+    path('agendar/', views.agendar_cita, name='agendar_cita'),
+
 ]
 

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div style="max-width: 450px; margin: 40px auto; background-color: #1a1a1a; padding: 30px; border-radius: 8px; border-top: 4px solid rgb(201, 39, 39); box-shadow: 0 8px 24px rgba(201, 39, 39, 0.2);">
+    
+    <h2 style="color: rgb(201, 39, 39); text-align: center; margin-bottom: 20px; font-size: 1.8rem;">📅 SOLICITAR TURNO</h2>
+    
+    {% if mensaje %}
+        <div style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold; border: 1px solid #2ecc71;">
+            {{ mensaje }}
+        </div>
+    {% endif %}
+
+    <!-- ✉️ Método POST para enviar la cita segura -->
+    <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+        {% csrf_token %}
+
+        <div>
+            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Selecciona la Fecha:</label>
+            <input type="date" name="fecha" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+        </div>
+
+        <div>
+            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Selecciona la Hora:</label>
+            <input type="time" name="hora" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+        </div>
+
+        <div>
+            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Barbero de tu preferencia:</label>
+            <select name="barbero" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+                {% for b in barberos %}
+                    <option value="{{ b.id_barbero }}">Barbero Estrella #{{ b.id_barbero }} ({{ b.especialidad }})</option>
+                {% empty %}
+                    <option value="">No hay barberos disponibles</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Observaciones (Opcional):</label>
+            <textarea name="observaciones" placeholder="Ej: Corte con degradado alto, barba pulida..." style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px; height: 80px; resize: none;"></textarea>
+        </div>
+
+        <button type="submit" style="background-color: rgb(201, 39, 39); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; transition: 0.3s; width: 100%;">
+            CONFIRMAR RESERVA 💈
+        </button>
+    </form>
+</div>
+{% endblock %}

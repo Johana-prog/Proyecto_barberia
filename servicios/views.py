@@ -6,7 +6,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 import datetime
-from servicios.models import Servicio, Usuario, Barbero
+from servicios.models import Servicio, Usuario, Barbero , Cita
 import datetime
 
 # Este es nuestro "mesero" que saluda a los clientes de la barbería
@@ -160,3 +160,45 @@ def iniciar_sesion(request):
     # Si entra por primera vez a mirar la página (GET), le mostramos el formulario vacío
     return render(request, 'login.html')
 
+def agendar_cita(request):
+    # 1. Traemos los barberos de MySQL para llenar la cajita de opciones del formulario
+    barberos_base_datos = Barbero.objects.all()
+
+    # 2. ¿El cliente hundió el botón de CONFIRMAR RESERVA (POST)?
+    if request.method == 'POST':
+        fec = request.POST.get('fecha')
+        hor = request.POST.get('hora')
+        id_bar = request.POST.get('barbero')
+        obs = request.POST.get('observaciones')
+
+        try:
+            # 🛡️ Control de llaves foráneas: Buscamos los registros reales en sus cajones
+            barbero_elegido = Barbero.objects.get(id_barbero=id_bar)
+            # Como prueba, asignamos la cita al usuario número 1 o al primero disponible
+            usuario_cliente = Usuario.objects.first() 
+
+            # 3. Amasamos el molde de la Cita con los datos del sobre
+            nueva_cita = Cita(
+                fecha=fec,
+                hora=hor,
+                estado="pendiente",  # Nace con el estado por defecto de tu script SQL
+                observaciones=obs,
+                id_cliente=usuario_cliente, # Llave foránea obligatoria
+                id_barbero=barbero_elegido   # Llave foránea obligatoria
+            )
+            # 4. 💾 El comando rey: ¡Directo al archivador MySQL Workbench!
+            nueva_cita.save()
+
+            return render(request, 'agendar_cita.html', {
+                'mensaje': '¡Tu cita ha sido agendada con éxito! Te esperamos.',
+                'barberos': barberos_base_datos
+            })
+            
+        except Exception as e:
+            return render(request, 'agendar_cita.html', {
+                'mensaje': f'⚠️ Hubo un error al guardar: {e}',
+                'barberos': barberos_base_datos
+            })
+
+    # Si entra por primera vez (GET), le mostramos el formulario vacío con los barberos listos
+    return render(request, 'agendar_cita.html', {'barberos': barberos_base_datos})
