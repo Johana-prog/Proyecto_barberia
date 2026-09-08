@@ -5,6 +5,21 @@
     
     <h2 style="color: rgb(201, 39, 39); text-align: center; margin-bottom: 20px; font-size: 1.8rem;">📝 REGISTRO DE CLIENTE</h2>
 
+        <!-- Letrero verde de éxito (El que ya tenías) -->
+    {% if mensaje %}
+        <div style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold; border: 1px solid #2ecc71;">
+            {{ mensaje }}
+        </div>
+    {% endif %}
+
+    <!-- 🚨 NUEVO: Letrero rojo de error por si violan la seguridad -->
+    {% if mensaje_error %}
+        <div style="background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold; border: 1px solid #e74c3c;">
+            {{ mensaje_error }}
+        </div>
+    {% endif %}
+
+
         <!-- 💡 Si el mesero manda un mensaje de éxito, lo pintamos aquí en verde brillante -->
     {% if mensaje %}
         <div style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold; border: 1px solid #2ecc71;">

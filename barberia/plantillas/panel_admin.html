@@ -1,0 +1,94 @@
+<!--  mamá de las plantillas para heredar el menú de arriba y el pie de página de ADSO -->
+{% extends 'base.html' %}
+
+<!-- cargamos los archivos de la carpeta static (estilos y fotos) -->
+{% load static %}
+
+<!-- abrimos el hueco de contenido para meter el diseño del panel de control -->
+{% block contenido %}
+<div style="width: 100%; max-width: 1000px; margin: 30px auto; padding: 20px; font-family: sans-serif;">
+    
+    <!-- 👑 SECCIÓN 1: Tarjeta de Encabezado Premium de la Jefa de la Barbería -->
+    <div style="background-color: #1a1a1a; padding: 25px; border-radius: 8px; border-left: 4px solid rgb(201, 39, 39); margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+        <h2 style="color: #fff; margin: 0; font-size: 1.8rem; letter-spacing: 0.5px;">💼 PANEL DE CONTROL: <span style="color: rgb(201, 39, 39);">ADMINISTRADOR</span></h2>
+        <p style="color: #aaa; margin: 5px 0 0 0; font-size: 0.95rem;">Bienvenida, Johana. Desde este panel tienes el control total para gestionar y moderar la agenda de turnos globales.</p>
+    </div>
+
+    <!-- 📊 SECCIÓN 2: Tabla de Control Inteligente conectada a MySQL Workbench -->
+    <div style="background-color: #1a1a1a; padding: 25px; border-radius: 8px; border-top: 3px solid rgb(201, 39, 39); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+        <h3 style="color: rgb(201, 39, 39); margin-top: 0; margin-bottom: 20px; font-size: 1.3rem; letter-spacing: 0.5px;">📅 AGENDA GLOBAL DE CITAS SOLICITADAS</h3>
+        
+        <!-- Estructura de la tabla con los títulos de las columnas -->
+        <table style="width: 100%; border-collapse: collapse; text-align: left; color: #fff;">
+            <thead>
+                <tr style="border-bottom: 2px solid #333; color: rgb(201, 39, 39); font-size: 0.95rem;">
+                    <th style="padding: 12px;">ID Cita</th>
+                    <th style="padding: 12px;">Fecha</th>
+                    <th style="padding: 12px;">Hora</th>
+                    <th style="padding: 12px;">Barbero Asignado</th>
+                    <th style="padding: 12px;">Observaciones del Cliente</th>
+                    <th style="padding: 12px;">Estado Actual</th>
+                    <th style="padding: 12px; text-align: center;">Acciones de Moderación</th> 
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 🔄 BUCLE FOR: Django recorre la tabla cita de MySQL y pinta fila por fila -->
+                {% for c in citas %}
+                    <tr style="border-bottom: 1px solid #222; background-color: #111; font-size: 0.95rem; transition: 0.2s;">
+                        <!-- ID único de la cita -->
+                        <td style="padding: 12px; font-weight: bold; color: rgb(201, 39, 39);">#{{ c.id_cita }}</td>
+                        <!-- Fecha y hora del turno -->
+                        <td style="padding: 12px;">{{ c.fecha }}</td>
+                        <td style="padding: 12px;">{{ c.hora }}</td>
+                        <!-- Jala el ID del barbero usando la relación de llave foránea -->
+                        <td style="padding: 12px;">Barbero Estrella #{{ c.id_barbero.id_barbero }}</td>
+                        <!-- Notas u observaciones que el cliente escribió en el formulario -->
+                        <td style="padding: 12px; color: #aaa; font-size: 0.9rem; max-width: 200px; word-wrap: break-word;">{{ c.observaciones }}</td>
+                        
+                        <!-- 🎨 CONDICIONAL IF: Cambiamos el color de la etiqueta según el estado de la base de datos -->
+                        <td style="padding: 12px;">
+                            {% if c.estado == 'confirmada' %}
+                                <!-- Alerta verde si la cita ya fue aprobada por Johana -->
+                                <span style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; letter-spacing: 0.5px;">✅ CONFIRMADA</span>
+                            {% elif c.estado == 'cancelada' %}
+                                <!-- Alerta roja si la cita fue cancelada -->
+                                <span style="background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; letter-spacing: 0.5px;">❌ CANCELADA</span>
+                            {% else %}
+                                <!-- Alerta amarilla si la cita está recién creada y sigue en espera -->
+                                <span style="background-color: rgba(241, 196, 15, 0.2); color: #f1c40f; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; letter-spacing: 0.5px;">⏳ PENDIENTE</span>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- ✉️ COLUMNA ACCIONES: Formularios ocultos que mandan la orden por método POST (sobre sellado) -->
+                        <td style="padding: 12px; text-align: center;">
+                            <form method="POST" style="display: inline-block; margin: 0; padding: 0;">
+                                <!-- El token de seguridad obligatorio de Django para proteger el envío -->
+                                {% csrf_token %}
+                                <!-- Este input invisible le dice al mesero qué número de ID específico vamos a modificar -->
+                                <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
+                                
+                                <!-- Botón Verde: Llama a la orden 'aceptar_cita' en views.py -->
+                                <button type="submit" name="aceptar_cita" style="background-color: #2ecc71; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-right: 5px; transition: 0.2s;">
+                                    Aceptar
+                                </button>
+                                <!-- Botón Rojo: Llama a la orden 'cancelar_cita' en views.py -->
+                                <button type="submit" name="cancelar_cita" style="background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; transition: 0.2s;">
+                                    Cancelar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <!-- Muestra esta fila de respaldo si la tabla de MySQL está vacía -->
+                    <tr>
+                        <td colspan="7" style="padding: 30px; text-align: center; color: #666; font-size: 1rem;">
+                            📭 Actualmente no registramos ninguna solicitud de cita en la base de datos.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

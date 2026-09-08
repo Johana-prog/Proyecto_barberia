@@ -8,6 +8,9 @@
 from django.db import models
 
 
+# =========================================================================
+# 🔒 TABLAS INTERNAS AUTOMÁTICAS DE SEGURIDAD DE DJANGO (NO TOCAR)
+# =========================================================================
 
 class AuthGroup(models.Model):
     name = models.CharField(unique=True, max_length=150)
@@ -78,8 +81,13 @@ class AuthUserUserPermissions(models.Model):
         unique_together = (('user', 'permission'),)
 
 
+# =========================================================================
+# 💈 TABLAS REALES DE TU PROYECTO DE BARBERÍA (CONECTADAS A WORKBENCH)
+# =========================================================================
+
 class Barbero(models.Model):
     id_barbero = models.AutoField(primary_key=True)
+    # Llave foránea amarrada a la tabla Usuario
     id_usuario = models.ForeignKey('Usuario', models.DO_NOTHING, db_column='id_usuario')
     especialidad = models.CharField(max_length=100, blank=True, null=True)
     experiencia_anios = models.IntegerField(blank=True, null=True)
@@ -95,6 +103,7 @@ class Cita(models.Model):
     hora = models.TimeField()
     estado = models.CharField(max_length=10, blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True)
+    # Llaves foráneas obligatorias del circuito de agendamiento
     id_cliente = models.ForeignKey('Usuario', models.DO_NOTHING, db_column='id_cliente')
     id_barbero = models.ForeignKey(Barbero, models.DO_NOTHING, db_column='id_barbero')
 
@@ -190,14 +199,22 @@ class Servicio(models.Model):
     descripcion = models.TextField(blank=True, null=True)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     duracion_minutos = models.IntegerField(blank=True, null=True)
-    estado = models.IntegerField(blank=True, null=True)
+    
+    # 💡 OPCIONES DEL ESTADO DEL SERVICIO: Texto de la lista desplegable en español
+    OPCIONES_ESTADO_SERVICIO = [
+        (1, 'Disponible'),
+        (0, 'No Disponible'),
+    ]
+    # Transformamos el número frío por un menú interactivo con un valor por defecto de 1
+    estado = models.IntegerField(blank=True, null=True, choices=OPCIONES_ESTADO_SERVICIO, default=1)
 
     class Meta:
         managed = False
         db_table = 'servicio'
 
+    # 🏷️ El letrero para que Django muestre el nombre del corte de cabello en el panel
     def __str__(self):
-      return self.nombre_servicio 
+        return self.nombre_servicio 
 
 
 class Usuario(models.Model):
@@ -210,12 +227,21 @@ class Usuario(models.Model):
     contraseña = models.CharField(max_length=255)
     rol = models.CharField(max_length=13)
     fecha_registro = models.DateField(blank=True, null=True)
-    estado = models.IntegerField(blank=True, null=True)
+    
+    # 💡 OPCIONES DEL ESTADO DEL USUARIO: Para que el administrador no cometa errores numéricos
+    OPCIONES_ESTADO_USUARIO = [
+        (1, 'Activo'),
+        (0, 'Inactivo'),
+    ]
+    # Transformamos la cajita de texto en una lista desplegable humana de opciones fijas
+    estado = models.IntegerField(blank=True, null=True, choices=OPCIONES_ESTADO_USUARIO, default=1)
 
     class Meta:
         managed = False
         db_table = 'usuario'
 
-    def _str_(self):
-       return f"{self.nombre} {self.apellido}"
+    # 🏷️ ¡CORREGIDO! Con doble guion bajo en cada lado para ver el Nombre y Apellido humano del cliente
+    def __str__(self):
+        return f"{self.nombre} {self.apellido}"
+
   

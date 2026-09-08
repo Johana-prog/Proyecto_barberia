@@ -1,204 +1,152 @@
-#from django.http import HttpResponse 
-#import datetime
-#from django.template import Template, Context
-#import datetime
-#from django.template.loader import get_template
-from django.shortcuts import render
-from django.http import HttpResponse
-import datetime
-from servicios.models import Servicio, Usuario, Barbero , Cita
+from django.shortcuts import render, redirect
+from servicios.models import Servicio, Usuario, Barbero, Cita
 import datetime
 
-# Este es nuestro "mesero" que saluda a los clientes de la barbería
-def bienvenida(request):  #primera vista
-    return HttpResponse("¡Bienvenidos a la Barbería! Aquí verás los mejores cortes.")
-
-# segunda vista
-def contacto(request):
-    return render(request, 'contacto.html')
-
-# Este mesero recibe el 'request' del cliente Y ADEMÁS el 'nombre' del barbero
-def perfil_barbero(request, nombre):
-    return HttpResponse(f"💇‍♂️ Estás viendo el perfil del barbero: {nombre.capitalize()}. ¡Agenda tu cita con él!")
-
-#aqui vamos a hacer una calculadora de puntos de fidelidad
-def calcular_puntos(request, cantidad_cortes):
-    #convertimos el texto de la url en un numero entero (int) para multiplicar
-    cortes = int(cantidad_cortes)
-    total_puntos = cortes * 10
-
-    return HttpResponse(f"🏆 Si te haces {cortes} cortes con nosotras, ¡acumularás {total_puntos} puntos para cortes gratis!") 
-
-#nueva vista hora actual recuerda importar datetime
-def hora_actual(request):
-    #le preguntamos la hora exacta a la computadora
-    ahora = datetime.datetime.now()
-    # se le da un formato bonito (hora:minutos)
-    hora_formateada = ahora.strftime("%H:%M")
-
-    return HttpResponse(f"⏰ La hora actual es {hora_formateada}. Recuerda que nuestro horario de atención es de 8am a 6pm.")
-
-# que nunca se te olvide agregar las herramientas que necesitas en este caso template  y context 
-# from django.template import template, context
-
-#def inicio_barberia(request):
-    #abrimos el archivo HTML usando la ruta de nuestro pc cambia la posicion de las barras 
-    #doc_externo = open("C:/Users/HP/Desktop/Proyecto_barbershop/barberia/barberia/plantillas/inicio.html")
-
-    #django lee el contenido del archivo
-    #plt= Template(doc_externo.read())
-    #se cierra el archivo porque ya lo leimos 
-    #doc_externo.close()  <- asi importamos documentos
-
-    # otra forma de importar recuerda que se agrego la ruta en settings templates dirs
-    #plt = get_template('inicio.html')
-
-    ahora = datetime.datetime.now().strftime ("%d/%m/%Y a las %H:%M")
-   
-    # 1. Creamos nuestra lista de servicios de la barbería
-    lista_servicios = ["Corte Clásico ✂️", "Perfilado de Barba 🧔", "Tintura Platinada 🎨", "Lavado Premium 🧼"]
-     
-
-    # 2. Metemos la lista como un ingrediente en el diccionario
-    # aqui quitamos el conetext porque estamos usando get_template
-    #datos = {
-        #"cliente": "Johana",
-       # "servicios": lista_servicios ,# <-- Aquí pasamos la lista completa
-       # "fecha_actual":ahora 
-    # }
-    
-    # 2. 🪄 ¡EL TRUCO MAGÍCO! Todo se hace en una sola línea gracias a 'render'
-    return render(request, 'inicio.html', {
-        "cliente": "Johana",
-        "servicios": lista_servicios,
-        "fecha_actual": ahora 
-    })
-
-    # combinamos template con contexto cuando impostamos de la forma larga
-    # renderizamos pasando directamente el diccionario porque importamos con get_template
-    documento_final = plt.render(datos)
-
-    # se entrega el resultado final al navegador del cliente
-    return HttpResponse(documento_final)
-
+# 🏠 1. PÁGINA PRINCIPAL PÚBLICA
 def inicio_barberia(request):
-    # 1. Le pedimos la hora al reloj del sistema
     ahora = datetime.datetime.now().strftime("%d/%m/%Y a las %H:%M")
-    
-    # 2. 🧲 ¡EL COMANDO MÁGICO DE LECTURA! 
-    # Django viaja a MySQL Workbench y se trae TODOS los servicios que tengas guardados
     servicios_base_datos = Servicio.objects.all()
-
-    # 🧲 IMÁN 2: ¡NUEVO! Django viaja a MySQL y se trae a TODOS tus barberos reales
     barberos_base_datos = Barbero.objects.all()
-    # 3. Le pasamos los datos reales de la base de datos a tu plantilla HTML
-   
-      # Pasamos las dos listas reales a tu plantilla HTML dentro de la caja organizadora
+    sesion = 'cliente_nombre' in request.session
     return render(request, 'inicio.html', {
-        "cliente": request.GET.get('user', 'Invitado'), # Saludo dinámico inicial
         "servicios": servicios_base_datos,
-        "barberos": barberos_base_datos,  # <-- Enviamos los barberos a la pantalla
-        "fecha_actual": ahora 
+        "barberos": barberos_base_datos,
+        "fecha_actual": ahora,
+        "sesion_activa": sesion
     })
 
-
+# 📝 2. REGISTRO DE CLIENTES (Ojos de seguridad)
 def registrar_cliente(request):
-    # 1. ¿El usuario hundió el botón rojo de enviar (POST)?
     if request.method == 'POST':
-        # 2. El mesero mete la mano en el sobre y saca los textos de las cajitas
         nom = request.POST.get('nombre')
         ape = request.POST.get('apellido')
         doc = request.POST.get('documento')
         cor = request.POST.get('correo')
         cla = request.POST.get('contraseña')
 
-        # 3. Usamos tu molde de Workbench para crear el registro
-        nuevo_usuario = Usuario(
-            nombre=nom,
-            apellido=ape,
-            documento=doc,
-            correo=cor,
-            contraseña=cla,
-            rol="cliente",        # Todos los que se registren entran como clientes
-            estado=1
-        )
-        # 4. 💾 El comando rey: ¡Directo a MySQL!
-        nuevo_usuario.save()
+        if Usuario.objects.filter(documento=doc).exists():
+            return render(request, 'registro.html', {'mensaje_error': '⚠️ Error: Este documento ya existe.'})
+        if Usuario.objects.filter(correo=cor).exists():
+            return render(request, 'registro.html', {'mensaje_error': '⚠️ Error: Este correo ya está en uso.'})
 
-        # 5. Le avisamos que todo salió bien mandándolo a una pantalla de éxito
-        return render(request, 'registro.html', {'mensaje': '¡Cuenta creada con éxito! Bienvenido a la Barbería.'})
-
-    # Si la persona solo viene a mirar la página (GET), le mostramos el formulario vacío
+        try:
+            nuevo = Usuario(nombre=nom, apellido=ape, documento=doc, correo=cor, contraseña=cla, rol="cliente", estado=1)
+            nuevo.save()
+            return render(request, 'registro.html', {'mensaje': '¡Cuenta creada con éxito!'})
+        except Exception as e:
+            return render(request, 'registro.html', {'mensaje_error': f'⚠️ Error: {e}'})
     return render(request, 'registro.html')
 
+# 👤 3. INICIO DE SESIÓN / ENRUTAMIENTO POR ROLES
 def iniciar_sesion(request):
-    # 1. ¿El usuario hundió el botón de ENTRAR (POST)?
+    # CONTROL DE ENTRADA RÁPIDA: Si ya tiene la sesión abierta
+    if 'cliente_nombre' in request.session and 'cliente_rol' in request.session and request.method == 'GET':
+        rol = request.session['cliente_rol']
+        if rol == 'administrador': return redirect('panel_admin')
+        elif rol == 'barbero': return redirect('panel_barbero')
+        else: return redirect('panel_cliente')
+
+    # PROCESO CUANDO ENGANCHA EL POST CON CLAVE
     if request.method == 'POST':
         correo_digitado = request.POST.get('correo')
         clave_digitada = request.POST.get('contraseña')
 
         try:
-            usuario_encontrado = Usuario.objects.get(correo=correo_digitado)
-            
-            if usuario_encontrado.contraseña == clave_digitada:
-                # 🧲 Traemos los barberos reales para mostrarlos en el panel derecho
-                barberos_base_datos = Barbero.objects.all()
+            user = Usuario.objects.get(correo=correo_digitado)
+            if user.contraseña == clave_digitada:
+                # Seteamos las sesiones seguras
+                request.session['cliente_nombre'] = user.nombre
+                request.session['cliente_correo'] = user.correo
+                request.session['cliente_rol'] = user.rol
                 
-                # 🚀 ¡CAMBIO CLAVE! Mandamos al usuario a su panel privado con su nombre
-                return render(request, 'panel_cliente.html',  {
-                    "cliente": usuario_encontrado.nombre,
-                    "barberos": barberos_base_datos,
-                     "sesion_activa": True  # 💡 OJO AQUI LE AVISAMOS AL MENÚ QUE YA ENTRÓ
-                })
+                # Desvíos directos según la base de datos
+                if user.rol == 'administrador': return redirect('panel_admin')
+                elif user.rol == 'barbero': return redirect('panel_barbero')
+                else: return redirect('panel_cliente')
             else:
-                return render(request, 'login.html', {"error": "⚠️ Contraseña incorrecta. Inténtalo de nuevo."})
-                
+                return render(request, 'login.html', {"error": "⚠️ Contraseña incorrecta."})
         except Usuario.DoesNotExist:
-            # Si el correo no existe en la base de datos, entra aquí
-            return render(request, 'login.html', {"error": "⚠️ Este correo no está registrado en el sistema."})
-
-    # Si entra por primera vez a mirar la página (GET), le mostramos el formulario vacío
+            return render(request, 'login.html', {"error": "⚠️ Este correo no existe."})
     return render(request, 'login.html')
 
-def agendar_cita(request):
-    # 1. Traemos los barberos de MySQL para llenar la cajita de opciones del formulario
+# 👑 4. PANEL DEL CLIENTE
+def panel_cliente(request):
+    if 'cliente_nombre' not in request.session: return redirect('login')
+    usuario_actual = Usuario.objects.get(correo=request.session['cliente_correo'])
     barberos_base_datos = Barbero.objects.all()
+    mis_citas = Cita.objects.filter(id_cliente=usuario_actual).order_by('fecha', 'hora')
+    return render(request, 'panel_cliente.html', {
+        "cliente": request.session['cliente_nombre'],
+        "barberos": barberos_base_datos,
+        "citas": mis_citas,
+        "sesion_activa": True
+    })
 
-    # 2. ¿El cliente hundió el botón de CONFIRMAR RESERVA (POST)?
+# ⚙️ 6. PERFIL DEL CLIENTE
+def configurar_perfil(request):
+    if 'cliente_correo' not in request.session: return redirect('login')
+    usuario_actual = Usuario.objects.get(correo=request.session['cliente_correo'])
+    if request.method == 'POST':
+        usuario_actual.telefono = request.POST.get('telefono')
+        usuario_actual.correo = request.POST.get('correo')
+        usuario_actual.save()
+        request.session['cliente_correo'] = usuario_actual.correo
+        return render(request, 'perfil.html', {'usuario': usuario_actual, 'mensaje': '¡Datos actualizados!', 'sesion_activa': True})
+    return render(request, 'perfil.html', {'usuario': usuario_actual, 'sesion_activa': True})
+
+# 💈 6. PANEL DEL BARBERO (Con triple botón)
+def panel_barbero(request):
+    if 'cliente_nombre' not in request.session: return redirect('login')
+
+    if request.method == 'POST':
+        id_c = request.POST.get('id_cita')
+        cita = Cita.objects.get(id_cita=id_c)
+        
+        if 'confirmar_cita' in request.POST: cita.estado = 'confirmada'
+        elif 'atender_cita' in request.POST: cita.estado = 'atendida'
+        elif 'cancelar_cita' in request.POST: cita.estado = 'cancelada'
+        cita.save()
+
+    citas_barbero = Cita.objects.filter(id_barbero=1).order_by('fecha', 'hora')
+    return render(request, 'panel_barbero.html', {
+        "cliente": request.session['cliente_nombre'],
+        "citas": citas_barbero,
+        "sesion_activa": True
+    })
+
+# 💼 7. PANEL DEL ADMINISTRADOR
+def panel_administrador(request):
+    if request.method == 'POST':
+        id_c = request.POST.get('id_cita')
+        cita = Cita.objects.get(id_cita=id_c)
+        if 'aceptar_cita' in request.POST: cita.estado = 'confirmada'
+        elif 'cancelar_cita' in request.POST: cita.estado = 'cancelada'
+        cita.save()
+
+    citas_totales = Cita.objects.all().order_by('fecha', 'hora')
+    return render(request, 'panel_admin.html', {'citas': citas_totales, 'sesion_activa': True})
+
+# 📅 8. AGENDAR CITAS Y OTROS
+def agendar_cita(request):
+    barberos_base_datos = Barbero.objects.all()
     if request.method == 'POST':
         fec = request.POST.get('fecha')
         hor = request.POST.get('hora')
         id_bar = request.POST.get('barbero')
         obs = request.POST.get('observaciones')
-
         try:
-            # 🛡️ Control de llaves foráneas: Buscamos los registros reales en sus cajones
             barbero_elegido = Barbero.objects.get(id_barbero=id_bar)
-            # Como prueba, asignamos la cita al usuario número 1 o al primero disponible
-            usuario_cliente = Usuario.objects.first() 
-
-            # 3. Amasamos el molde de la Cita con los datos del sobre
-            nueva_cita = Cita(
-                fecha=fec,
-                hora=hor,
-                estado="pendiente",  # Nace con el estado por defecto de tu script SQL
-                observaciones=obs,
-                id_cliente=usuario_cliente, # Llave foránea obligatoria
-                id_barbero=barbero_elegido   # Llave foránea obligatoria
-            )
-            # 4. 💾 El comando rey: ¡Directo al archivador MySQL Workbench!
+            usuario_cliente = Usuario.objects.get(correo=request.session['cliente_correo'])
+            nueva_cita = Cita(fecha=fec, hora=hor, estado="pendiente", observaciones=obs, id_cliente=usuario_cliente, id_barbero=barbero_elegido)
             nueva_cita.save()
-
-            return render(request, 'agendar_cita.html', {
-                'mensaje': '¡Tu cita ha sido agendada con éxito! Te esperamos.',
-                'barberos': barberos_base_datos
-            })
-            
+            return render(request, 'agendar_cita.html', {'mensaje': '¡Cita agendada!', 'barberos': barberos_base_datos, 'sesion_activa': True})
         except Exception as e:
-            return render(request, 'agendar_cita.html', {
-                'mensaje': f'⚠️ Hubo un error al guardar: {e}',
-                'barberos': barberos_base_datos
-            })
+            return render(request, 'agendar_cita.html', {'mensaje': f'⚠️ Error: {e}', 'barberos': barberos_base_datos, 'sesion_activa': True})
+    return render(request, 'agendar_cita.html', {'barberos': barberos_base_datos, 'sesion_activa': True})
 
-    # Si entra por primera vez (GET), le mostramos el formulario vacío con los barberos listos
-    return render(request, 'agendar_cita.html', {'barberos': barberos_base_datos})
+def cerrar_sesion(request):
+    request.session.flush()
+    return redirect('inicio')
+
+def contacto(request):
+    return render(request, 'contacto.html', {'sesion_activa': 'cliente_nombre' in request.session})

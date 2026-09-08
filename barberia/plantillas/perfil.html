@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div style="max-width: 450px; margin: 40px auto; background-color: #1a1a1a; padding: 30px; border-radius: 8px; border-top: 4px solid rgb(201, 39, 39);">
+    <h2 style="color: rgb(201, 39, 39); text-align: center; margin-bottom: 20px;">⚙️ CONFIGURAR MI CUENTA</h2>
+    
+    {% if mensaje %}
+        <div style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold;">{{ mensaje }}</div>
+    {% endif %}
+
+    <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+        {% csrf_token %}
+        <div>
+            <label style="display: block; margin-bottom: 5px; color: #aaa;">Mi Teléfono Celular:</label>
+            <input type="text" name="telefono" value="{{ usuario.telefono|default_if_none:'' }}" style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 5px; color: #aaa;">Mi Correo Electrónico:</label>
+            <input type="email" name="correo" value="{{ usuario.correo }}" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+        </div>
+        <button type="submit" style="background-color: rgb(201, 39, 39); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; width: 100%;">
+            ACTUALIZAR MIS DATOS ✂️
+        </button>
+    </form>
+</div>
+{% endblock %}

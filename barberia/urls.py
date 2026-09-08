@@ -14,34 +14,43 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
+
 from django.contrib import admin
 from django.urls import path
-#1. aqui le decimos a django que busque en la carpeta 'servicios' el archivo 'views'
 from servicios import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    #2. aqui creamos la calle para que el cliente encuentre al mesero
-    path('bienvenida/', views.bienvenida),
-    path('contacto/', views.contacto), #nueva callle 
+    # Oficina de administración azul original
+    path('admin/', admin.site.urls), 
     
-    # nueva calle inteligente
-    path('barbero/<str:nombre>/', views.perfil_barbero),
-
-    #nueva calle calculadora/fidelidad usamos <int:..> porque recibimos numero no texto
-    path('puntos/<int:cantidad_cortes>/', views.calcular_puntos),
-
-    #nueva calle para nuestra hora
-    path('hora/', views.hora_actual),
-
-    # nueva calle para el diseño HTML
-    path('inicio/', views.inicio_barberia),
-
-    path('registro/', views.registrar_cliente, name='registro'),
-
-    path('login/', views.iniciar_sesion, name='login'),
-
+    # 🏠 Página principal de bienvenida pública (Figma)
+    path('inicio/', views.inicio_barberia, name='inicio'), 
+    
+    # 📝 Registro con ojos de seguridad (Semana 4)
+    path('registro/', views.registrar_cliente, name='registro'), 
+    
+    # 👤 Login con enrutamiento inteligente por roles (Semana 5)
+    path('login/', views.iniciar_sesion, name='login'), 
+    
+    # 👑 Panel privado del cliente (Saludo + Historial de citas)
+    path('panel-cliente/', views.panel_cliente, name='panel_cliente'), 
+    
+    # ⚙️ Pantalla para que el cliente configure su teléfono y correo
+    path('perfil/', views.configurar_perfil, name='configurar_perfil'), 
+    
+    # 💈 Panel privado del barbero (Con triple botón de moderación)
+    path('panel-barbero/', views.panel_barbero, name='panel_barbero'), 
+    
+    # 💼 Panel del administrador global para la Jefa
+    path('dashboard-admin/', views.panel_administrador, name='panel_admin'),
+    
+    # 📅 Formulario para solicitar y agendar turnos en MySQL
     path('agendar/', views.agendar_cita, name='agendar_cita'),
-
+    
+    # 🚪 Botón de salida para borrar la memoria (Sesiones)
+    path('cerrar/', views.cerrar_sesion, name='cerrar_sesion'),
+    
+    # 📞 Pantalla de contacto pública
+    path('contacto/', views.contacto, name='contacto'),
 ]
-

@@ -10,22 +10,36 @@
 <body> 
     
     <!-- Tu barra de navegación con tu botón de login -->
+          <!-- -->
     <div class="nav">
-        <a href="/inicio/">
-           <!-- <img src="{% static 'imagenes/logo.png' %}" alt="Logo" style="height: 85px; width: auto;">-->
-        </a>
-        <div class="nav-links">
-            <a href="/inicio/">🏠 INICIO</a>
-            
-             <!-- 💡 SI LA SESIÓN ESTÁ ACTIVA, MUESTRA CERRAR SESIÓN -->
+        <!-- Lado Izquierdo: Nombre de la marca -->
+        <div>
             {% if sesion_activa %}
-                <a href="/inicio/" style="color: rgb(201, 39, 39); font-weight: bold;">🚪 CERRAR SESIÓN</a>
+                <a href="/login/" style="font-size: 1.2rem; font-weight: bold; color: white; text-decoration: none;">✂️ USME BARBER TOP</a>
             {% else %}
-                <!-- SI NO HAY SESIÓN, MUESTRA EL MENÚ NORMAL -->
-                <a href="/login/">👤 ABRIR SESIÓN / REGISTRARSE</a>
+                <a href="/inicio/" style="font-size: 1.2rem; font-weight: bold; color: white; text-decoration: none;">✂️ USME BARBER TOP</a>
+            {% endif %}
+        </div>
+        
+        <!-- Lado Derecho: Botones alineados en su esquina original -->
+        <div class="nav-links" style="display: flex; gap: 20px; align-items: center;">
+            {% if sesion_activa %}
+                <!-- 👑 MENÚ PRIVADO: Lo que ve el cliente cuando YA ENTRÓ al panel -->
+                <a href="/login/" style="text-decoration: none; color: white;">🏠 INICIO PANEL</a>
+                
+                <!-- 🎯 ¡MIRA AQUÍ! Pusimos la ruta real /cerrar/ para borrar la pulsera VIP -->
+                <a href="/cerrar/" style="color: rgb(201, 39, 39); font-weight: bold; text-decoration: none;">🚪 CERRAR SESIÓN</a>
+            {% else %}
+                <!-- 🏙️ MENÚ PÚBLICO: Lo que ve la gente en la calle (sin sesión) -->
+                <a href="/login/" style="text-decoration: none; color: white;">👤 ABRIR SESIÓN / REGISTRARSE</a>
             {% endif %}
         </div>
     </div>
+
+    
+
+
+
     
     <!-- 🕳️ El agujero mágico donde se meterá el contenido dinámico -->
     <div class="body-container">

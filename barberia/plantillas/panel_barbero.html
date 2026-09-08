@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block contenido %}
+<div style="width: 100%; max-width: 900px; margin: 30px auto; padding: 20px; font-family: sans-serif;">
+    
+    <!-- Encabezado del Barbero -->
+    <div style="background-color: #1a1a1a; padding: 25px; border-radius: 8px; border-left: 4px solid #fff; margin-bottom: 25px;">
+        <h2 style="color: #fff; margin: 0; font-size: 1.8rem;">💈 PANEL DE TRABAJO: <span style="color: rgb(201, 39, 39);">{{ cliente }}</span></h2>
+        <p style="color: #aaa; margin: 5px 0 0 0; font-size: 0.95rem;">Gestión interna de turnos solicitados.</p>
+    </div>
+
+    <!-- Lista de Turnos -->
+    <div style="background-color: #1a1a1a; padding: 20px; border-radius: 8px; border-top: 3px solid rgb(201, 39, 39);">
+        <h3 style="color: rgb(201, 39, 39); margin-top: 0; margin-bottom: 15px;">✂️ MIS TURNOS ASIGNADOS</h3>
+        
+        {% for c in citas %}
+            <div style="background-color: #111; padding: 15px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #fff; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong style="color: #fff; font-size: 1.05rem;">⏰ {{ c.hora }} - Fecha: {{ c.fecha }}</strong><br>
+                    <span style="color: #aaa; font-size: 0.9rem;">📝 Notas: {{ c.observaciones|default:"Sin observaciones." }}</span>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <!-- Pintamos el estado actual que viene de MySQL Workbench -->
+                    {% if c.estado == 'confirmada' %}
+                        <span style="background-color: rgba(52, 152, 219, 0.2); color: #3498db; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">✅ CONFIRMADA</span>
+                    {% elif c.estado == 'atendida' %}
+                        <span style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">✔️ ATENDIDA</span>
+                    {% elif c.estado == 'cancelada' %}
+                        <span style="background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">❌ CANCELADA</span>
+                    {% else %}
+                        <span style="background-color: rgba(241, 196, 15, 0.2); color: #f1c40f; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">⏳ {{ c.estado|upper }}</span>
+                    {% endif %}
+                    
+                    <!-- Los botones se muestran si la cita NO ha finalizado ni se ha cancelado -->
+                                        <!-- 🎮 LOS BOTONES SOLO SE MUESTRAN SI LA CITA SIGUE 'PENDIENTE' -->
+                    <!-- 💡 Ojo: Si la cita ya está confirmada, atendida o cancelada, los botones DESAPARECEN de la pantalla -->
+                    {% if c.estado != 'confirmada' and c.estado != 'atendida' and c.estado != 'cancelada' %}
+                        <form method="POST" style="margin: 0; padding: 0; display: flex; gap: 5px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
+                            
+                            <button type="submit" name="confirmar_cita" style="background-color: #2ecc71; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">Confirmar</button>
+                            <button type="submit" name="atender_cita" style="background-color: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">Atendido</button>
+                            <button type="submit" name="cancelar_cita" style="background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">Cancelar</button>
+                        </form>
+                    {% endif %}
+
+                </div>
+            </div>
+        {% empty %}
+            <p style="color: #666; font-size: 0.95rem; text-align: center; padding: 20px;">📭 No tienes turnos asignados por ahora.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
