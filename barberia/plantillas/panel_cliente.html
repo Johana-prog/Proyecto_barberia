@@ -2,77 +2,55 @@
 {% load static %}
 
 {% block contenido %}
-<div style="width: 100%; max-width: 900px; margin: 30px auto; padding: 20px;">
-    
-    <!-- 👤 Saludo Personalizado Superior -->
+<div style="display: flex; width: 100%;">
+    {% include 'menu_lateral.html' %}
+    <div style="flex: 1; padding: 30px; font-family: sans-serif;">
+
     <div style="background-color: #1a1a1a; padding: 25px; border-radius: 8px; border-left: 4px solid rgb(201, 39, 39); margin-bottom: 25px;">
         <h2 style="color: #fff; margin: 0; font-size: 1.8rem;">💈 ¡Bienvenid@, <span style="color: rgb(201, 39, 39);">{{ cliente }}</span>!</h2>
-        <p style="color: #aaa; margin: 5px 0 0 0; font-size: 0.95rem;">Este es tu panel privado de Usme Barber Top. Desde aquí puedes gestionar tus turnos.</p>
+        <p style="color: #aaa; margin: 5px 0 0 0; font-size: 0.95rem;">Maneja tu agenda en la plataforma inteligente de Usme Barber Top.</p>
     </div>
 
-    <!-- 🗂️ Contenedor de dos Columnas -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
-        
-        <!-- Columna Izquierda: Agendar Cita -->
-        <div style="background-color: #1a1a1a; padding: 20px; border-radius: 8px; border-top: 3px solid rgb(201, 39, 39);">
-            <h3 style="color: rgb(201, 39, 39); margin-top: 0; margin-bottom: 15px;">📅 Agendar una Cita</h3>
-            <a href="/perfil/" style="display: inline-block; background-color: #fff; color: #111; text-decoration: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; margin-top: 10px; font-size: 0.9rem; margin-left: 10px;">
-               CONFIGURAR CUENTA ⚙️
-            </a>
-
-            <p style="color: #ccc; font-size: 0.9rem; line-height: 1.5;">Reserva tu espacio con tu barbero favorito en un segundo de forma digital.</p>
-            <a href="/agendar/" style="display: inline-block; background-color: rgb(201, 39, 39); color: white; text-decoration: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; margin-top: 10px; font-size: 0.9rem;">
-                SOLICITAR TURNO ✂️
-            </a>
-        </div>
-
-        <!-- Columna Derecha: Nuestro Equipo (¡Aquí reubicamos tus barberos!) -->
-        <div style="background-color: #1a1a1a; padding: 20px; border-radius: 8px; border-top: 3px solid #fff;">
-            <h3 style="color: #fff; margin-top: 0; margin-bottom: 15px;">💈 Barberos Disponibles</h3>
-            <div style="max-height: 200px; overflow-y: auto; padding-right: 5px;">
-                {% for b in barberos %}
-                    <div style="background-color: #111; padding: 10px; border-radius: 4px; margin-bottom: 10px; border-left: 2px solid rgb(201, 39, 39);">
-                        <strong style="color: #fff; font-size: 0.95rem;">🔥 Barbero Estrella #{{ b.id_barbero }}</strong><br>
-                        <span style="color: #aaa; font-size: 0.85rem;">Especialidad: {{ b.especialidad }}</span><br>
-                        <span style="color: #666; font-size: 0.8rem;">Experiencia: {{ b.experiencia_anios }} años</span>
-                    </div>
-                {% empty %}
-                    <p style="color: #666; font-size: 0.9rem;">No hay barberos activos en este momento.</p>
-                {% endfor %}
-            </div>
-        </div>
-
-    </div>
-        <!-- 📅 NUEVA SECCIÓN: Historial y Recordatorio de Citas del Cliente -->
-    <div style="background-color: #1a1a1a; padding: 25px; border-radius: 8px; border-top: 3px solid rgb(201, 39, 39); margin-top: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-        <h3 style="color: rgb(201, 39, 39); margin-top: 0; margin-bottom: 15px;">📋 MIS CITAS PROGRAMADAS:</h3>
+    <div style="background-color: #1a1a1a; padding: 25px; border-radius: 8px; border-top: 3px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+        <h3 style="color: #fff; margin-top: 0; margin-bottom: 15px; font-size: 1.2rem;">📋 MI AGENDA PERSONAL DE CITAS:</h3>
         
         <div style="display: flex; flex-direction: column; gap: 12px;">
             {% for c in citas %}
                 <div style="background-color: #111; padding: 15px; border-radius: 4px; border-left: 3px solid rgb(201, 39, 39); display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <strong style="color: #fff; font-size: 1rem;">📅 Fecha: {{ c.fecha }} - ⏰ Hora: {{ c.hora }}</strong><br>
-                        <span style="color: #aaa; font-size: 0.85rem;">💈 Atendido por: Barbero Estrella #{{ c.id_barbero.id_barbero }}</span><br>
-                        <span style="color: #666; font-size: 0.85rem;">📝 Notas: {{ c.observaciones|default:"Ninguna" }}</span>
+                        <strong style="color: #fff; font-size: 1rem;">📅 Fecha: {{ c.fecha }} — ⏰ Hora: {{ c.hora }}</strong><br>
+                        <span style="color: rgb(201, 39, 39); font-weight: bold; font-size: 0.95rem;">💈 SERVICIO: {{ c.nombre_limpio_servicio }}</span>
                     </div>
                     <div>
-                        <!-- Etiqueta del estado de la cita -->
-                        {% if c.estado == 'confirmada' %}
-                            <span style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">✅ APROBADA</span>
-                        {% elif c.estado == 'atendida' %}
-                            <span style="background-color: rgba(52, 152, 219, 0.2); color: #3498db; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">💈 TERMINADA</span>
-                        {% elif c.estado == 'cancelada' %}
-                            <span style="background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">❌ CANCELADA</span>
-                        {% else %}
-                            <span style="background-color: rgba(241, 196, 15, 0.2); color: #f1c40f; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">⏳ ESPERANDO APROBACIÓN</span>
+                        {% if c.estado == 'confirmada' %} <span style="background-color: rgba(52, 152, 219, 0.2); color: #3498db; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">✅ APROBADA</span>
+                        {% elif c.estado == 'atendida' %} <span style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">✔️ TERMINADA</span>
+                        {% elif c.estado == 'cancelada' %} <span style="background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">❌ CANCELADA</span>
+                        {% else %} <span style="background-color: rgba(241, 196, 15, 0.2); color: #f1c40f; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">⏳ EN ESPERA</span>
                         {% endif %}
                     </div>
                 </div>
             {% empty %}
-                <p style="color: #666; font-size: 0.95rem; margin: 0;">📭 Aún no registras ninguna cita en tu agenda. ¡Solicita tu primer turno arriba!</p>
+                <p style="color: #556; font-size: 0.95rem; margin: 0;">📭 Actualmente no registras turnos agendados en tu cuenta.</p>
+            {% endfor %}
+                </div>
+    </div>
+
+    <!-- 📋 Nuestros servicios y tarifas -->
+    <div style="background-color: #1a1a1a; padding: 20px 25px; border-radius: 8px; margin-top: 20px;">
+        <h4 style="color: #fff; margin-top: 0; margin-bottom: 14px; font-size: 1rem;">📋 Nuestros Servicios y Tarifas</h4>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            {% for s in servicios %}
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; font-size: 0.9rem;">
+                    <span style="color: #ddd;">{{ s.nombre_servicio }}</span>
+                    <span style="color: #C9A227; font-weight: bold;">${{ s.precio|floatformat:"0" }} COP</span>
+                </div>
+            {% empty %}
+                <p style="color: #556; font-size: 0.85rem; margin: 0;">Aún no hay servicios publicados.</p>
             {% endfor %}
         </div>
     </div>
 
+    </div>
 </div>
 {% endblock %}
+

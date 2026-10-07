@@ -1,48 +1,58 @@
 {% extends 'base.html' %}
 
 {% block contenido %}
-<div style="max-width: 450px; margin: 40px auto; background-color: #1a1a1a; padding: 30px; border-radius: 8px; border-top: 4px solid rgb(201, 39, 39); box-shadow: 0 8px 24px rgba(201, 39, 39, 0.2);">
-    
-    <h2 style="color: rgb(201, 39, 39); text-align: center; margin-bottom: 20px; font-size: 1.8rem;">📅 SOLICITAR TURNO</h2>
+<div style="max-width: 500px; margin: 40px auto; background-color: #1a1a1a; padding: 30px; border-radius: 8px; border-top: 4px solid rgb(201, 39, 39); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);">
+    <a href="javascript:history.back()" style="color: #888; text-decoration: none; font-size: 0.85rem; display: inline-block; margin-bottom: 15px;">← Volver</a>
+    <h2 style="color: rgb(201, 39, 39); text-align: center; margin-bottom: 20px; font-size: 1.8rem; letter-spacing: 0.5px;">📅 RESERVAR ESPACIO DISPONIBLE</h2>
     
     {% if mensaje %}
-        <div style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold; border: 1px solid #2ecc71;">
-            {{ mensaje }}
-        </div>
+        <div style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold;">{{ mensaje }}</div>
+    {% endif %}
+    {% if mensaje_error %}
+        <div style="background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold;">{{ mensaje_error }}</div>
     {% endif %}
 
-    <!-- ✉️ Método POST para enviar la cita segura -->
-    <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+    <form method="POST" style="display: flex; flex-direction: column; gap: 18px;">
         {% csrf_token %}
 
+        <!-- Desplegable dinámico de horarios libres -->
         <div>
-            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Selecciona la Fecha:</label>
-            <input type="date" name="fecha" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
-        </div>
-
-        <div>
-            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Selecciona la Hora:</label>
-            <input type="time" name="hora" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
-        </div>
-
-        <div>
-            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Barbero de tu preferencia:</label>
-            <select name="barbero" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
-                {% for b in barberos %}
-                    <option value="{{ b.id_barbero }}">Barbero Estrella #{{ b.id_barbero }} ({{ b.especialidad }})</option>
+            <label style="display: block; margin-bottom: 6px; color: #aaa; font-size: 0.95rem;">1. Selecciona un Horario Libre de la Agenda:</label>
+            <select name="turno_id" required style="width: 100%; padding: 12px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px; font-size: 0.9rem;">
+                {% for t in turnos %}
+                    <option value="{{ t.id_cita }}">🗓️ {{ t.fecha }} a las ⏰ {{ t.hora }} — Con {{ t.id_barbero.id_usuario.nombre }} {{ t.id_barbero.id_usuario.apellido }}</option>
                 {% empty %}
-                    <option value="">No hay barberos disponibles</option>
+                    <option value="">🚫 Lo sentimos, no hay turnos libres publicados hoy.</option>
                 {% endfor %}
             </select>
         </div>
+        <!-- 👁️ Enlaces rápidos para conocer a los barberos disponibles -->
+<div style="background-color: #111; padding: 12px 16px; border-radius: 6px; border: 1px solid #222;">
+    <p style="color: #888; font-size: 0.8rem; margin: 0 0 8px 0;">👀 ¿Quieres conocer más de tus barberos antes de elegir?</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        {% for b in barberos_disponibles %}
+            <a href="/barbero/{{ b.id_barbero }}/" target="_blank" style="color: rgb(201, 39, 39); text-decoration: none; font-size: 0.85rem; font-weight: bold; background-color: #1a1a1a; padding: 6px 12px; border-radius: 20px; border: 1px solid #333;">
+                👁️ Ver a {{ b.id_usuario.nombre }}
+            </a>
+        {% endfor %}
+    </div>
+</div>
 
+        <!-- 🎯 SELECCIÓN DE SERVICIO CON PRECIOS REALES CONECTADOS -->
         <div>
-            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Observaciones (Opcional):</label>
-            <textarea name="observaciones" placeholder="Ej: Corte con degradado alto, barba pulida..." style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px; height: 80px; resize: none;"></textarea>
+            <label style="display: block; margin-bottom: 6px; color: rgb(201, 39, 39); font-size: 0.95rem; font-weight: bold;">2. Elige tu Servicio Urbano y Tarifa:</label>
+            <select name="servicio_elegido" required style="width: 100%; padding: 12px; background-color: #111; border: 1px solid rgb(201, 39, 39); color: white; border-radius: 4px; font-weight: bold; font-size: 0.9rem;">
+                <!-- Mandamos el precio escondido en el valor para que Python lo pueda sumar -->
+                {% for s in servicios %}
+                  <option value="{{ s.nombre_servicio }}|{{ s.precio|floatformat:"0" }}">{{ s.nombre_servicio }} — ${{ s.precio|floatformat:"0" }} COP</option>
+                 {% empty %}
+                   <option value="">🚫 No hay servicios configurados todavía.</option>
+                 {% endfor %}
+            </select>
         </div>
 
-        <button type="submit" style="background-color: rgb(201, 39, 39); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; transition: 0.3s; width: 100%;">
-            CONFIRMAR RESERVA 💈
+        <button type="submit" style="background-color: rgb(201, 39, 39); color: white; border: none; padding: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 5px; width: 100%; font-size: 1rem; letter-spacing: 0.5px;">
+            RESERVAR ESTE TURNO AHORA ➔
         </button>
     </form>
 </div>

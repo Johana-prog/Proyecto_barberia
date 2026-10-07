@@ -1,0 +1,69 @@
+<div style="width: 230px; min-width: 230px; background-color: #111; min-height: 100vh; padding: 20px 15px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #222;">
+
+        <!-- ⬅️ Volver: solo aparece si NO estás en la pantalla principal de tu rol -->
+    {% if request.path != '/panel-cliente/' and request.path != '/panel-barbero/' and request.path != '/dashboard-admin/' %}
+        <a href="javascript:history.back()" style="color: #666; text-decoration: none; font-size: 0.8rem; margin-bottom: 15px;">← Volver</a>
+    {% endif %}
+
+    <!-- 🧑 Foto y datos del usuario logueado -->
+    <div style="text-align: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #222;">
+        {% if usuario_sesion.foto %}
+            <img src="{{ usuario_sesion.foto.url }}" style="width: 85px; height: 85px; border-radius: 50%; object-fit: cover; border: 3px solid rgb(201, 39, 39);">
+        {% else %}
+            <div style="width: 85px; height: 85px; border-radius: 50%; background-color: #222; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto; border: 3px solid #333;">👤</div>
+        {% endif %}
+        <p style="color: #fff; font-weight: bold; margin: 12px 0 2px 0; font-size: 1rem;">{{ usuario_sesion.nombre }} {{ usuario_sesion.apellido }}</p>
+        <p style="color: rgb(201, 39, 39); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin: 0; font-weight: bold;">{{ usuario_sesion.rol }}</p>
+    </div>
+
+    <!-- 🧭 Enlaces según el rol -->
+    {% if usuario_sesion.rol == 'cliente' %}
+        <a href="/panel-cliente/" class="link-lateral">🏠 Mi Agenda</a>
+        <a href="/agendar/" class="link-lateral">✂️ Solicitar Turno</a>
+
+    {% elif usuario_sesion.rol == 'barbero' %}
+        <a href="/panel-barbero/#agenda-sec" id="btn-agenda" class="link-lateral b-tab-btn" style="background-color: rgb(201, 39, 39);" onclick="return cambiarPestanaLateral('agenda-sec','btn-agenda')">📅 Publicar Horarios</a>
+        <a href="/panel-barbero/#turnos-sec" id="btn-turnos" class="link-lateral b-tab-btn" onclick="return cambiarPestanaLateral('turnos-sec','btn-turnos')">✂️ Servicios Reservados</a>
+        <a href="/panel-barbero/#portafolio-sec" id="btn-portafolio" class="link-lateral b-tab-btn" onclick="return cambiarPestanaLateral('portafolio-sec','btn-portafolio')">🌟 Mi Portafolio</a>
+        <a href="/registro/" class="link-lateral" style="margin-top: 8px; border-top: 1px solid #222; padding-top: 16px;">➕ Registrar Usuario</a>
+
+    {% elif usuario_sesion.rol == 'administrador' %}
+        <a href="/dashboard-admin/#citas-sec" id="btn-citas" class="link-lateral tab-btn" style="background-color: rgb(201, 39, 39);" onclick="return cambiarPestanaLateral('citas-sec','btn-citas')">📅 Gestión de Citas</a>
+        <a href="/dashboard-admin/#usuarios-sec" id="btn-usuarios" class="link-lateral tab-btn" onclick="return cambiarPestanaLateral('usuarios-sec','btn-usuarios')">👥 Control de Usuarios</a>
+        <a href="/dashboard-admin/#servicios-sec" id="btn-servicios" class="link-lateral tab-btn" onclick="return cambiarPestanaLateral('servicios-sec','btn-servicios')">💰 Tarifas y Servicios</a>
+        <a href="/registro/" class="link-lateral" style="margin-top: 8px; border-top: 1px solid #222; padding-top: 16px;">➕ Registrar Usuario</a>
+    {% endif %}
+
+    <a href="/perfil/" class="link-lateral" style="margin-top: 10px;">⚙️ Editar Perfil</a>
+
+    <div style="margin-top: auto;">
+        <a href="/cerrar/" style="color: #e74c3c; text-decoration: none; padding: 12px 14px; border-radius: 6px; font-size: 0.9rem; display: block;">🚪 Cerrar Sesión</a>
+    </div>
+</div>
+
+<style>
+    .link-lateral {
+        color: #ddd;
+        text-decoration: none;
+        padding: 12px 14px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        display: block;
+    }
+    .link-lateral:hover {
+        color: rgb(201, 39, 39) !important;
+    }
+</style>
+
+<script>
+    // 🔗 Si la sección ya existe en esta misma página, cambiamos de pestaña sin recargar.
+    // Si no existe (estamos en otra pantalla), dejamos que el enlace navegue normal hacia el panel.
+    function cambiarPestanaLateral(idSeccion, idBoton) {
+        if (document.getElementById(idSeccion)) {
+            if (typeof abrirPestana === 'function') { abrirPestana(idSeccion, idBoton); }
+            if (typeof abrirBarberoPestana === 'function') { abrirBarberoPestana(idSeccion, idBoton); }
+            return false;
+        }
+        return true;
+    }
+</script>

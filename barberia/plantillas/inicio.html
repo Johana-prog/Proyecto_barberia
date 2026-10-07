@@ -2,30 +2,57 @@
 {% load static %}
 
 {% block contenido %}
-    <div class="izquierda">
-        <h1>✂️ USME BARBER</h1>
-        <!-- Tu imagen premium con el brillo rojo difuminado -->
-        <img src="{% static 'imagenes/corte.png' %}" alt="Principal">
+
+<div class="hero-fondo">
+    <div class="carrusel-slide activo" style="background-image: url('{% static 'imagenes/carrusel1.png' %}');"></div>
+    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel2.png' %}');"></div>
+    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel3.png' %}');"></div>
+    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel4.png' %}');"></div>
+    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel5.png' %}');"></div>
+    <div class="cortina-navaja" id="cortinaNavaja"></div>
+
+    <div class="hero-overlay-oscuro"></div>
+
+    <div class="hero-contenido-flotante">
+        <img src="{% static 'imagenes/logo.png' %}" alt="Usme Barber Top" class="logo-flotante">
+        <a href="/login/" class="btn-dorado">Reservar mi cita</a>
     </div>
-    
-    <div class="derecha">
-        <!-- Tus eslóganes oficiales -->
-        <h3>📈 Lleva tu estilo al siguiente nivel.</h3>
-        <h3>💈 Haz que tu corte sea una experiencia única.</h3>
-        <h3>📞 +57 323 6214485</h3>
-        
-        <!-- Tu sección comercial de Servicios Frecuentados -->
-        <div style="margin-top: 30px; text-align: left; width: 100%; max-width: 380px; background-color: #1a1a1a; padding: 20px; border-radius: 8px; border-left: 4px solid rgb(201, 39, 39);">
-            <h4 style="color: rgb(201, 39, 39); margin-bottom: 12px; font-size: 1.1rem; letter-spacing: 0.5px;">🔥 LOS MÁS PEDIDOS:</h4>
-            
-            <p style="font-size: 1rem; color: #fff; line-height: 1.6;">
-                {% for item in servicios %} 
-                    ⭐ <strong>{{ item.nombre_servicio }}</strong><br>
-                    <span style="color: #aaa; font-size: 0.85rem;">{{ item.descripcion }}</span><br><br>
-                {% empty %}
-                    <span style="color: #666;">No hay servicios sugeridos en este momento.</span>
-                {% endfor %}
-            </p>
-        </div>
+</div>
+
+<div class="seccion-servicios" id="servicios">
+    <h2 class="titulo-seccion">Nuestros Servicios</h2>
+    <div class="linea-dorada centrada"></div>
+    <div class="grid-servicios">
+        {% for s in servicios %}
+            <div class="tarjeta-servicio">
+            <h3>{{ s.nombre_servicio }}</h3>
+            <p class="descripcion-servicio">{{ s.descripcion|default:"Servicio profesional de barbería." }}</p>
+            <p class="precio-servicio">${{ s.precio|floatformat:"0" }} COP</p>
+</div>
+        {% empty %}
+            <p style="color: #8A8580;">Muy pronto publicaremos nuestros servicios aquí.</p>
+        {% endfor %}
     </div>
+</div>
+
+<script>
+    (function() {
+        const slides = document.querySelectorAll('.carrusel-slide');
+        const cortina = document.getElementById('cortinaNavaja');
+        let indiceActual = 0;
+
+        setInterval(function() {
+            cortina.classList.add('deslizando');
+            setTimeout(function() {
+                slides[indiceActual].classList.remove('activo');
+                indiceActual = (indiceActual + 1) % slides.length;
+                slides[indiceActual].classList.add('activo');
+            }, 400);
+            setTimeout(function() {
+                cortina.classList.remove('deslizando');
+            }, 900);
+        }, 4000);
+    })();
+</script>
+
 {% endblock %}

@@ -5,54 +5,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Usme Barber Top</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
 </head>
-<body> 
-    
-    <!-- Tu barra de navegación con tu botón de login -->
-          <!-- -->
+<body>
+
+        {% if not sesion_activa %}
     <div class="nav">
-        <!-- Lado Izquierdo: Nombre de la marca -->
-        <div>
-            {% if sesion_activa %}
-                <a href="/login/" style="font-size: 1.2rem; font-weight: bold; color: white; text-decoration: none;">✂️ USME BARBER TOP</a>
-            {% else %}
-                <a href="/inicio/" style="font-size: 1.2rem; font-weight: bold; color: white; text-decoration: none;">✂️ USME BARBER TOP</a>
-            {% endif %}
+        <div class="nav-marca">
+            <a href="/inicio/" class="nav-marca-texto">💈 USME BARBER TOP ✂️</a>
         </div>
-        
-        <!-- Lado Derecho: Botones alineados en su esquina original -->
-        <div class="nav-links" style="display: flex; gap: 20px; align-items: center;">
-            {% if sesion_activa %}
-                <!-- 👑 MENÚ PRIVADO: Lo que ve el cliente cuando YA ENTRÓ al panel -->
-                <a href="/login/" style="text-decoration: none; color: white;">🏠 INICIO PANEL</a>
-                
-                <!-- 🎯 ¡MIRA AQUÍ! Pusimos la ruta real /cerrar/ para borrar la pulsera VIP -->
-                <a href="/cerrar/" style="color: rgb(201, 39, 39); font-weight: bold; text-decoration: none;">🚪 CERRAR SESIÓN</a>
-            {% else %}
-                <!-- 🏙️ MENÚ PÚBLICO: Lo que ve la gente en la calle (sin sesión) -->
-                <a href="/login/" style="text-decoration: none; color: white;">👤 ABRIR SESIÓN / REGISTRARSE</a>
-            {% endif %}
+        <div class="nav-links">
+            <a href="/login/">👤 INICIAR SESIÓN</a>
         </div>
     </div>
+    <div class="sub-nav">
+        <a href="/inicio/#servicios">Servicios</a>
+        <span class="sub-nav-separador">|</span>
+        <a href="/galeria/">Galería de Fotos</a>
+        <span class="sub-nav-separador">|</span>
+        <a href="/contacto-info/">Contacto</a>
+    </div>
+    {% endif %}
 
-    
-
-
-
-    
-    <!-- 🕳️ El agujero mágico donde se meterá el contenido dinámico -->
     <div class="body-container">
         {% block contenido %}
         {% endblock %}
     </div>
 
-    <!-- Tu Pie de página original con los links interconectados -->
-    <div class="footer">
-        <a href="/inicio/">✄ © 2026 Usme Barber Top - Sistema de gestión de citas.</a>
-        <a href="/contacto/"> Barbería en Medellín 📍 </a>
-        <a href="/contacto/">💈 Contáctenos</a> 
-    </div>
+    {% include 'pie_pagina.html' %}
 
 </body>
 </html>

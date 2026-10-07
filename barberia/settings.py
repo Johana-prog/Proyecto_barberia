@@ -63,6 +63,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'servicios.context_processors.usuario_actual',
             ],
         },
     },
@@ -129,4 +130,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, '../static'),
 ]
 
+# 🖼️ Configuración para guardar y mostrar fotos de perfil
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 

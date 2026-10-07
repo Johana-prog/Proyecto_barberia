@@ -18,6 +18,8 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from servicios import views
 
 urlpatterns = [
@@ -47,10 +49,27 @@ urlpatterns = [
     
     # 📅 Formulario para solicitar y agendar turnos en MySQL
     path('agendar/', views.agendar_cita, name='agendar_cita'),
+
+    path('barbero/<int:id_barbero>/', views.ver_perfil_barbero, name='ver_perfil_barbero'),
     
     # 🚪 Botón de salida para borrar la memoria (Sesiones)
     path('cerrar/', views.cerrar_sesion, name='cerrar_sesion'),
     
-    # 📞 Pantalla de contacto pública
-    path('contacto/', views.contacto, name='contacto'),
+
+    path('acerca-de/', views.acerca_de_sena, name='acerca_de'),
+
+    # 🎯 NUEVA CALLE: Para la pantalla de Contacto y Ubicación Avanzada
+    path('contacto-info/', views.pantalla_contacto, name='pantalla_contacto'),
+
+    path('galeria/', views.galeria_fotos_publica, name='galeria_publica'),
+
+    path('contacto-info/', views.pantalla_contacto, name='pantalla_contacto'),
+
+    
+
 ]
+
+
+# 🆕 Esto permite que las fotos subidas se vean en el navegador (solo modo desarrollo)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

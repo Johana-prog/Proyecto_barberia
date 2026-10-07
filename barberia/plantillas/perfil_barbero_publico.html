@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div style="display: flex; width: 100%; min-height: calc(100vh - 60px);">
+
+    {% include 'menu_lateral.html' %}
+
+    <div style="flex: 1; padding: 40px;">
+        <div style="max-width: 800px; margin: 0 auto;">
+
+            <a href="javascript:history.back()" style="color: #888; text-decoration: none; font-size: 0.85rem; display: inline-block; margin-bottom: 20px;">← Volver</a>
+
+            <!-- 🧑 Encabezado del barbero -->
+            <div style="background-color: #1a1a1a; padding: 30px; border-radius: 10px; border-top: 3px solid rgb(201, 39, 39); display: flex; align-items: center; gap: 25px; margin-bottom: 25px;">
+                {% if barbero.id_usuario.foto %}
+                    <img src="{{ barbero.id_usuario.foto.url }}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid rgb(201, 39, 39);">
+                {% else %}
+                    <div style="width: 100px; height: 100px; border-radius: 50%; background-color: #222; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; border: 3px solid #333;">💈</div>
+                {% endif %}
+                <div>
+                    <h2 style="color: #fff; margin: 0 0 6px 0; font-size: 1.6rem;">{{ barbero.id_usuario.nombre }} {{ barbero.id_usuario.apellido }}</h2>
+                    <p style="color: rgb(201, 39, 39); font-weight: bold; margin: 0 0 4px 0; font-size: 0.95rem;">✂️ {{ barbero.especialidad|default:"Barbero profesional" }}</p>
+                    <p style="color: #888; margin: 0; font-size: 0.85rem;">🎖️ {{ barbero.experiencia_anios|default:"0" }} años de experiencia</p>
+                </div>
+            </div>
+
+            <!-- 🌟 Servicios estrella -->
+            <div style="background-color: #1a1a1a; padding: 25px; border-radius: 10px; margin-bottom: 25px;">
+                <h3 style="color: #fff; margin-top: 0; margin-bottom: 15px; font-size: 1.1rem;">🌟 Especialidades</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    {% for est in servicios_estrella %}
+                        <span style="background-color: rgba(241, 196, 15, 0.15); color: #f1c40f; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(241, 196, 15, 0.3);">
+                            ⭐ {{ est.id_servicio.nombre_servicio }}
+                        </span>
+                    {% empty %}
+                        <p style="color: #556; font-size: 0.9rem; margin: 0;">Este barbero aún no ha marcado sus especialidades.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 🖼️ Galería de trabajos -->
+            <div style="background-color: #1a1a1a; padding: 25px; border-radius: 10px;">
+                <h3 style="color: #fff; margin-top: 0; margin-bottom: 15px; font-size: 1.1rem;">🖼️ Trabajos Recientes</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px;">
+                    {% for f in fotos_trabajo %}
+                        <img src="{{ f.imagen.url }}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
+                    {% empty %}
+                        <p style="color: #556; font-size: 0.9rem; grid-column: 1 / -1;">📭 Este barbero todavía no ha subido fotos de sus trabajos.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

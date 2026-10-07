@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="seccion-galeria-publica">
+    <h2 class="titulo-seccion">Galería de Trabajos</h2>
+    <div class="linea-dorada centrada"></div>
+    <p style="color: #8A8580; margin-top: 10px;">Descubre el trabajo real de nuestro equipo de barberos.</p>
+
+    <div class="grid-galeria-publica">
+        {% for f in fotos %}
+            <div class="item-galeria">
+                <img src="{{ f.imagen.url }}">
+                <div class="etiqueta-barbero">✂️ {{ f.id_barbero.id_usuario.nombre }}</div>
+            </div>
+        {% empty %}
+            <p style="color: #556;">Todavía no hay fotos de trabajos publicadas.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

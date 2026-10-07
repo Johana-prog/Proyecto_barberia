@@ -216,6 +216,27 @@ class Servicio(models.Model):
     def __str__(self):
         return self.nombre_servicio 
 
+class BarberoServicioEstrella(models.Model):
+    id_relacion = models.AutoField(primary_key=True)
+    id_barbero = models.ForeignKey(Barbero, models.CASCADE, db_column='id_barbero')
+    id_servicio = models.ForeignKey(Servicio, models.CASCADE, db_column='id_servicio')
+
+    class Meta:
+        managed = False
+        db_table = 'barbero_servicio_estrella'
+        unique_together = (('id_barbero', 'id_servicio'),)
+
+
+class FotoTrabajoBarbero(models.Model):
+    id_foto = models.AutoField(primary_key=True)
+    id_barbero = models.ForeignKey(Barbero, models.CASCADE, db_column='id_barbero')
+    imagen = models.ImageField(upload_to='trabajos_barberos/')
+    fecha_subida = models.DateField(blank=True, null=True, auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = 'foto_trabajo_barbero'
+
 
 class Usuario(models.Model):
     id_usuario = models.AutoField(primary_key=True)
@@ -223,6 +244,7 @@ class Usuario(models.Model):
     apellido = models.CharField(max_length=50)
     documento = models.CharField(unique=True, max_length=20)
     telefono = models.CharField(max_length=15, blank=True, null=True)
+    foto = models.ImageField(upload_to='perfiles/', blank=True, null=True)
     correo = models.CharField(unique=True, max_length=100)
     contraseña = models.CharField(max_length=255)
     rol = models.CharField(max_length=13)
