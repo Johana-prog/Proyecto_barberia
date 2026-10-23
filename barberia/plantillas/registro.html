@@ -1,66 +1,87 @@
-{% extends 'base.html' %}
+{% extends 'auth_base.html' %}
 
-{% block contenido %}
-<div style="max-width: 450px; margin: 40px auto; background-color: #1a1a1a; padding: 30px; border-radius: 8px; border-top: 4px solid rgb(201, 39, 39); box-shadow: 0 8px 24px rgba(201, 39, 39, 0.2);">
-    
-    <h2 style="color: rgb(201, 39, 39); text-align: center; margin-bottom: 20px; font-size: 1.8rem;">📝 REGISTRO DE CLIENTE</h2>
+{% block formulario %}
+    <h1 class="auth-titulo">Crear cuenta</h1>
+    <p class="auth-sub">Regístrate para reservar tus turnos</p>
 
-        <!-- Letrero verde de éxito (El que ya tenías) -->
+    {% if usuario_sesion.rol == 'administrador' %}
+        <p class="auth-nota">La persona entra como cliente. Luego puedes cambiar su rol en Control de Usuarios.</p>
+    {% endif %}
+
     {% if mensaje %}
-        <div style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold; border: 1px solid #2ecc71;">
-            {{ mensaje }}
-        </div>
+        <div class="alerta alerta-ok">{{ mensaje }}</div>
+
+        {% if usuario_sesion %}
+            <a href="/registro/" class="btn btn-primario btn-block">
+                <svg class="ico"><use href="#i-user"/></svg>Registrar otro usuario
+            </a>
+        {% else %}
+            <a href="/login/" class="btn btn-primario btn-block">
+                <svg class="ico"><use href="#i-scissors"/></svg>Ir a iniciar sesión
+            </a>
+        {% endif %}
+    {% else %}
+
+        {% if mensaje_error %}
+            <div class="alerta alerta-error">{{ mensaje_error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="auth-fila-2">
+                <div class="campo">
+                    <label for="nombre">Nombre</label>
+                    <div class="campo-icono">
+                        <svg class="ico"><use href="#i-user"/></svg>
+                        <input type="text" id="nombre" name="nombre" class="input" value="{{ request.POST.nombre }}" required autofocus>
+                    </div>
+                </div>
+                <div class="campo">
+                    <label for="apellido">Apellido</label>
+                    <div class="campo-icono">
+                        <svg class="ico"><use href="#i-user"/></svg>
+                        <input type="text" id="apellido" name="apellido" class="input" value="{{ request.POST.apellido }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="campo">
+                <label for="documento">Documento</label>
+                <div class="campo-icono">
+                    <svg class="ico"><use href="#i-id"/></svg>
+                    <input type="text" id="documento" name="documento" class="input" inputmode="numeric" value="{{ request.POST.documento }}" required>
+                </div>
+            </div>
+
+            <div class="campo">
+                <label for="correo">Correo</label>
+                <div class="campo-icono">
+                    <svg class="ico"><use href="#i-mail"/></svg>
+                    <input type="email" id="correo" name="correo" class="input" placeholder="tucorreo@ejemplo.com" value="{{ request.POST.correo }}" required>
+                </div>
+            </div>
+
+            <div class="campo" style="margin-bottom: 24px;">
+                <label for="clave">Contraseña</label>
+                <div class="campo-icono">
+                    <svg class="ico"><use href="#i-lock"/></svg>
+                    <input type="password" id="clave" name="contraseña" class="input" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primario btn-block">
+                <svg class="ico"><use href="#i-scissors"/></svg>Crear cuenta
+            </button>
+        </form>
     {% endif %}
 
-    <!-- 🚨 NUEVO: Letrero rojo de error por si violan la seguridad -->
-    {% if mensaje_error %}
-        <div style="background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold; border: 1px solid #e74c3c;">
-            {{ mensaje_error }}
-        </div>
-    {% endif %}
-
-
-        <!-- 💡 Si el mesero manda un mensaje de éxito, lo pintamos aquí en verde brillante -->
-    {% if mensaje %}
-        <div style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold; border: 1px solid #2ecc71;">
-            {{ mensaje }}
-        </div>
-    {% endif %}
-
-    
-    <!-- ✉️ Aquí usamos el método POST (el sobre sellado) -->
-    <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
-        <!-- 🛡️ Este es un candado obligatorio de Django para que nadie robe los datos -->
-        {% csrf_token %}
-
-        <div>
-            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Nombre:</label>
-            <input type="text" name="nombre" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
-        </div>
-
-        <div>
-            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Apellido:</label>
-            <input type="text" name="apellido" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
-        </div>
-
-        <div>
-            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Documento (Cédula):</label>
-            <input type="text" name="documento" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
-        </div>
-
-        <div>
-            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Correo Electrónico:</label>
-            <input type="email" name="correo" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
-        </div>
-
-        <div>
-            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Contraseña:</label>
-            <input type="password" name="contraseña" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
-        </div>
-
-        <button type="submit" style="background-color: rgb(201, 39, 39); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; transition: 0.3s;">
-            CREAR CUENTA 💈
-        </button>
-    </form>
-</div>
+    <div class="auth-pie">
+        {% if usuario_sesion %}
+            <a href="{% if usuario_sesion.rol == 'administrador' %}/dashboard-admin/{% elif usuario_sesion.rol == 'barbero' %}/panel-barbero/{% else %}/panel-cliente/{% endif %}" class="auth-link">← Volver a mi panel</a>
+        {% else %}
+            ¿Ya tienes cuenta? <a href="/login/" class="auth-link">Inicia sesión</a><br>
+            <a href="/inicio/" class="auth-volver">← Volver al inicio</a>
+        {% endif %}
+    </div>
 {% endblock %}

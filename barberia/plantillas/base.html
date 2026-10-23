@@ -7,11 +7,12 @@
     <title>Usme Barber Top</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+    <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/panel.css' %}?v=3">
 </head>
 <body>
 
-        {% if not sesion_activa %}
+    {% if not sesion_activa %}
     <div class="nav">
         <div class="nav-marca">
             <a href="/inicio/" class="nav-marca-texto">💈 USME BARBER TOP ✂️</a>

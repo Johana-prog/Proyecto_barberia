@@ -1,0 +1,18 @@
+# Secretos
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Pruebas
+.pytest_cache/
+
+# Base de datos local de pruebas
+db.sqlite3
+
+# Fotos subidas por los usuarios
+media/
+
+# Editor
+.vscode/

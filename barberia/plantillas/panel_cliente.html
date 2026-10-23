@@ -2,55 +2,65 @@
 {% load static %}
 
 {% block contenido %}
-<div style="display: flex; width: 100%;">
+<div class="panel-layout">
     {% include 'menu_lateral.html' %}
-    <div style="flex: 1; padding: 30px; font-family: sans-serif;">
 
-    <div style="background-color: #1a1a1a; padding: 25px; border-radius: 8px; border-left: 4px solid rgb(201, 39, 39); margin-bottom: 25px;">
-        <h2 style="color: #fff; margin: 0; font-size: 1.8rem;">💈 ¡Bienvenid@, <span style="color: rgb(201, 39, 39);">{{ cliente }}</span>!</h2>
-        <p style="color: #aaa; margin: 5px 0 0 0; font-size: 0.95rem;">Maneja tu agenda en la plataforma inteligente de Usme Barber Top.</p>
-    </div>
+    <main class="panel-main">
+    <div class="panel-contenido">
 
-    <div style="background-color: #1a1a1a; padding: 25px; border-radius: 8px; border-top: 3px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-        <h3 style="color: #fff; margin-top: 0; margin-bottom: 15px; font-size: 1.2rem;">📋 MI AGENDA PERSONAL DE CITAS:</h3>
-        
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-            {% for c in citas %}
-                <div style="background-color: #111; padding: 15px; border-radius: 4px; border-left: 3px solid rgb(201, 39, 39); display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong style="color: #fff; font-size: 1rem;">📅 Fecha: {{ c.fecha }} — ⏰ Hora: {{ c.hora }}</strong><br>
-                        <span style="color: rgb(201, 39, 39); font-weight: bold; font-size: 0.95rem;">💈 SERVICIO: {{ c.nombre_limpio_servicio }}</span>
+        <header class="panel-header">
+            <div class="panel-eyebrow">Mi cuenta</div>
+            <h1 class="panel-titulo">Hola, {{ usuario_sesion.nombre|title }}</h1>
+            <p class="panel-subtitulo">Revisa el estado de tus citas y consulta nuestras tarifas.</p>
+        </header>
+
+        <div class="card">
+            <div class="card-titulo"><svg class="ico"><use href="#i-calendar-check"/></svg>Mi agenda</div>
+            <p class="card-desc">Todas tus citas, con su estado actual.</p>
+            <div class="lista-citas">
+                {% for c in citas %}
+                    <div class="cita-item">
+                        <div>
+                            <div class="cita-fecha">{{ c.fecha }} · {{ c.hora }}</div>
+                            <div class="cita-servicio"><svg class="ico"><use href="#i-scissors"/></svg>{{ c.nombre_limpio_servicio }}</div>
+                        </div>
+                        <div>
+                            {% if c.estado == 'confirmada' %}
+                                <span class="badge badge-confirmada">Aprobada</span>
+                            {% elif c.estado == 'atendida' %}
+                                <span class="badge badge-atendida">Terminada</span>
+                            {% elif c.estado == 'cancelada' %}
+                                <span class="badge badge-cancelada">Cancelada</span>
+                            {% else %}
+                                <span class="badge badge-pendiente">En espera</span>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div>
-                        {% if c.estado == 'confirmada' %} <span style="background-color: rgba(52, 152, 219, 0.2); color: #3498db; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">✅ APROBADA</span>
-                        {% elif c.estado == 'atendida' %} <span style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">✔️ TERMINADA</span>
-                        {% elif c.estado == 'cancelada' %} <span style="background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">❌ CANCELADA</span>
-                        {% else %} <span style="background-color: rgba(241, 196, 15, 0.2); color: #f1c40f; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">⏳ EN ESPERA</span>
-                        {% endif %}
+                {% empty %}
+                    <div class="vacio">
+                        Todavía no tienes turnos agendados.<br>
+                        <a href="/agendar/" class="btn btn-primario"><svg class="ico"><use href="#i-scissors"/></svg>Solicitar turno</a>
                     </div>
-                </div>
-            {% empty %}
-                <p style="color: #556; font-size: 0.95rem; margin: 0;">📭 Actualmente no registras turnos agendados en tu cuenta.</p>
-            {% endfor %}
-                </div>
-    </div>
-
-    <!-- 📋 Nuestros servicios y tarifas -->
-    <div style="background-color: #1a1a1a; padding: 20px 25px; border-radius: 8px; margin-top: 20px;">
-        <h4 style="color: #fff; margin-top: 0; margin-bottom: 14px; font-size: 1rem;">📋 Nuestros Servicios y Tarifas</h4>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            {% for s in servicios %}
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; font-size: 0.9rem;">
-                    <span style="color: #ddd;">{{ s.nombre_servicio }}</span>
-                    <span style="color: #C9A227; font-weight: bold;">${{ s.precio|floatformat:"0" }} COP</span>
-                </div>
-            {% empty %}
-                <p style="color: #556; font-size: 0.85rem; margin: 0;">Aún no hay servicios publicados.</p>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
-    </div>
+
+        <div class="card">
+            <div class="card-titulo"><svg class="ico"><use href="#i-banknote"/></svg>Nuestros servicios y tarifas</div>
+            <div class="lista-precios" style="margin-top: 12px;">
+                {% for s in servicios %}
+                    <div class="fila">
+                        <span>{{ s.nombre_servicio }}</span>
+                        <span class="precio">${{ s.precio|floatformat:"0" }} COP</span>
+                    </div>
+                {% empty %}
+                    <div class="vacio">Aún no hay servicios publicados.</div>
+                {% endfor %}
+            </div>
+        </div>
 
     </div>
+    </main>
 </div>
 {% endblock %}
 

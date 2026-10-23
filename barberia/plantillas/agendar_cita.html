@@ -1,59 +1,137 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block contenido %}
-<div style="max-width: 500px; margin: 40px auto; background-color: #1a1a1a; padding: 30px; border-radius: 8px; border-top: 4px solid rgb(201, 39, 39); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);">
-    <a href="javascript:history.back()" style="color: #888; text-decoration: none; font-size: 0.85rem; display: inline-block; margin-bottom: 15px;">← Volver</a>
-    <h2 style="color: rgb(201, 39, 39); text-align: center; margin-bottom: 20px; font-size: 1.8rem; letter-spacing: 0.5px;">📅 RESERVAR ESPACIO DISPONIBLE</h2>
-    
-    {% if mensaje %}
-        <div style="background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold;">{{ mensaje }}</div>
-    {% endif %}
-    {% if mensaje_error %}
-        <div style="background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; padding: 12px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold;">{{ mensaje_error }}</div>
-    {% endif %}
+<style>
+    .agendar-wrap { max-width: 600px; }
 
-    <form method="POST" style="display: flex; flex-direction: column; gap: 18px;">
-        {% csrf_token %}
+    .alerta-error {
+        background: rgba(140, 42, 42, 0.18);
+        border-color: rgba(163, 51, 51, 0.55);
+        color: #E3A0A0;
+    }
 
-        <!-- Desplegable dinámico de horarios libres -->
-        <div>
-            <label style="display: block; margin-bottom: 6px; color: #aaa; font-size: 0.95rem;">1. Selecciona un Horario Libre de la Agenda:</label>
-            <select name="turno_id" required style="width: 100%; padding: 12px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px; font-size: 0.9rem;">
-                {% for t in turnos %}
-                    <option value="{{ t.id_cita }}">🗓️ {{ t.fecha }} a las ⏰ {{ t.hora }} — Con {{ t.id_barbero.id_usuario.nombre }} {{ t.id_barbero.id_usuario.apellido }}</option>
-                {% empty %}
-                    <option value="">🚫 Lo sentimos, no hay turnos libres publicados hoy.</option>
+    .paso-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        color: var(--hueso);
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+
+    .paso-num {
+        width: 24px;
+        height: 24px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--dorado-suave);
+        border: 1px solid rgba(201, 162, 39, 0.5);
+        color: var(--dorado);
+        font-size: 0.75rem;
+    }
+
+    .resumen-precio {
+        margin: 6px 0 22px;
+        color: var(--piedra);
+        font-size: 0.88rem;
+    }
+
+    .resumen-precio strong { color: var(--dorado); }
+</style>
+
+<div class="panel-layout">
+    {% include 'menu_lateral.html' %}
+
+    <main class="panel-main">
+    <div class="panel-contenido agendar-wrap">
+
+        <header class="panel-header">
+            <div class="panel-eyebrow">Reservas</div>
+            <h1 class="panel-titulo">Solicitar turno</h1>
+            <p class="panel-subtitulo">Elige un horario libre y el servicio que quieres.</p>
+        </header>
+
+        {% if mensaje %}
+            <div class="alerta alerta-ok">{{ mensaje }}</div>
+        {% endif %}
+        {% if mensaje_error %}
+            <div class="alerta alerta-error">{{ mensaje_error }}</div>
+        {% endif %}
+
+        <div class="card">
+            {% if turnos %}
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="campo">
+                    <div class="paso-label"><span class="paso-num">1</span>Horario libre</div>
+                    <select name="turno_id" class="select" required>
+                        {% for t in turnos %}
+                            <option value="{{ t.id_cita }}">{{ t.fecha }} · {{ t.hora }} — con {{ t.id_barbero.id_usuario.nombre }} {{ t.id_barbero.id_usuario.apellido }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="campo" style="margin-bottom: 0;">
+                    <div class="paso-label"><span class="paso-num">2</span>Servicio</div>
+                    <select name="servicio_elegido" id="selServicio" class="select" required>
+                        {% for s in servicios %}
+                            <option value="{{ s.nombre_servicio }}|{{ s.precio|floatformat:'0' }}">{{ s.nombre_servicio }} — ${{ s.precio|floatformat:"0" }} COP</option>
+                        {% empty %}
+                            <option value="">No hay servicios configurados todavía</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="resumen-precio" id="resumenPrecio"></div>
+
+                <button type="submit" class="btn btn-primario btn-block">
+                    <svg class="ico"><use href="#i-scissors"/></svg>Reservar este turno
+                </button>
+            </form>
+            {% else %}
+                <div class="vacio">Por ahora no hay turnos libres publicados.<br>Vuelve a intentarlo más tarde.</div>
+            {% endif %}
+        </div>
+
+        {% if barberos_disponibles %}
+        <div class="card">
+            <div class="card-titulo"><svg class="ico"><use href="#i-user"/></svg>Conoce a tu barbero</div>
+            <p class="card-desc">Mira su especialidad y sus trabajos antes de decidir.</p>
+            <div class="acciones">
+                {% for b in barberos_disponibles %}
+                    <a href="/barbero/{{ b.id_barbero }}/" target="_blank" class="btn btn-borde btn-sm">
+                        <svg class="ico"><use href="#i-user"/></svg>{{ b.id_usuario.nombre }}
+                    </a>
                 {% endfor %}
-            </select>
+            </div>
         </div>
-        <!-- 👁️ Enlaces rápidos para conocer a los barberos disponibles -->
-<div style="background-color: #111; padding: 12px 16px; border-radius: 6px; border: 1px solid #222;">
-    <p style="color: #888; font-size: 0.8rem; margin: 0 0 8px 0;">👀 ¿Quieres conocer más de tus barberos antes de elegir?</p>
-    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-        {% for b in barberos_disponibles %}
-            <a href="/barbero/{{ b.id_barbero }}/" target="_blank" style="color: rgb(201, 39, 39); text-decoration: none; font-size: 0.85rem; font-weight: bold; background-color: #1a1a1a; padding: 6px 12px; border-radius: 20px; border: 1px solid #333;">
-                👁️ Ver a {{ b.id_usuario.nombre }}
-            </a>
-        {% endfor %}
+        {% endif %}
+
     </div>
+    </main>
 </div>
 
-        <!-- 🎯 SELECCIÓN DE SERVICIO CON PRECIOS REALES CONECTADOS -->
-        <div>
-            <label style="display: block; margin-bottom: 6px; color: rgb(201, 39, 39); font-size: 0.95rem; font-weight: bold;">2. Elige tu Servicio Urbano y Tarifa:</label>
-            <select name="servicio_elegido" required style="width: 100%; padding: 12px; background-color: #111; border: 1px solid rgb(201, 39, 39); color: white; border-radius: 4px; font-weight: bold; font-size: 0.9rem;">
-                <!-- Mandamos el precio escondido en el valor para que Python lo pueda sumar -->
-                {% for s in servicios %}
-                  <option value="{{ s.nombre_servicio }}|{{ s.precio|floatformat:"0" }}">{{ s.nombre_servicio }} — ${{ s.precio|floatformat:"0" }} COP</option>
-                 {% empty %}
-                   <option value="">🚫 No hay servicios configurados todavía.</option>
-                 {% endfor %}
-            </select>
-        </div>
+<script>
+    // Muestra el precio del servicio elegido
+    (function () {
+        var sel = document.getElementById('selServicio');
+        var salida = document.getElementById('resumenPrecio');
+        if (!sel || !salida) { return; }
 
-        <button type="submit" style="background-color: rgb(201, 39, 39); color: white; border: none; padding: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 5px; width: 100%; font-size: 1rem; letter-spacing: 0.5px;">
-            RESERVAR ESTE TURNO AHORA ➔
-        </button>
-    </form>
-</div>
+        function pintar() {
+            var precio = sel.value.split('|')[1];
+            if (precio) {
+                salida.innerHTML = 'Total a pagar: <strong>$' + Number(precio).toLocaleString('es-CO') + ' COP</strong>';
+            } else {
+                salida.innerHTML = '';
+            }
+        }
+
+        sel.addEventListener('change', pintar);
+        pintar();
+    })();
+</script>
 {% endblock %}

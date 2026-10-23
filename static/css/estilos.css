@@ -1,0 +1,372 @@
+/* 1. CONFIGURACIÓN GENERAL */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #1A1715;
+    color: #F5F0E8;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    transition: 0.3s;
+}
+
+a:hover {
+    color: rgb(201, 39, 39) !important;
+}
+
+/* 2. BARRA DE NAVEGACIÓN */
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 5%;
+    background-color: #211E1B;
+    border-bottom: 3px solid rgb(201, 39, 39);
+}
+
+.nav-marca-texto {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+    color: #F5F0E8;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 0.9rem;
+    letter-spacing: 0.3px;
+}
+
+/* 3. CUERPO CENTRAL */
+.body-container {
+    flex: 1;
+    width: 100%;
+    padding: 0;
+}
+
+/* ============================================= */
+/* 🆕 HERO DE INICIO                              */
+/* ============================================= */
+
+.hero-fondo {
+    position: relative;
+    width: 100%;
+    height: 500px;
+    overflow: hidden;
+    background-color: #000;
+}
+
+.carrusel-slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.carrusel-slide.activo {
+    opacity: 1;
+}
+
+.hero-overlay-oscuro {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.8) 100%);
+    z-index: 2;
+}
+
+.hero-contenido-flotante {
+    position: relative;
+    z-index: 3;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 25px;
+    padding: 20px;
+    text-align: center;
+}
+
+.logo-flotante {
+    width: 100%;
+    max-width: 240px;
+    height: auto;
+}
+.carrusel-slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.carrusel-slide.activo {
+    opacity: 1;
+}
+
+.cortina-navaja {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -20%;
+    width: 20%;
+    background-color: #C9A227;
+    z-index: 5;
+    box-shadow: 0 0 25px 5px rgba(201, 162, 39, 0.6);
+}
+
+.cortina-navaja.deslizando {
+    animation: pasarNavaja 0.9s ease-in-out;
+}
+
+@keyframes pasarNavaja {
+    0%   { left: -20%; }
+    50%  { left: 40%; }
+    100% { left: 120%; }
+}
+
+.hero-logo {
+    flex: 0 0 220px;
+    display: flex;
+    justify-content: center;
+}
+
+.hero-logo img {
+    width: 100%;
+    max-width: 220px;
+    height: auto;
+}
+
+.fila-boton-reserva {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 8% 50px 8%;
+}
+
+.btn-dorado {
+    background-color: #C9A227;
+    color: #1A1715;
+    font-weight: bold;
+    padding: 16px 36px;
+    border-radius: 4px;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+.btn-dorado:hover {
+    background-color: #dbb838;
+    color: #1A1715 !important;
+}
+
+.linea-dorada.centrada {
+    width: 90px;
+    height: 4px;
+    background-color: #C9A227;
+    margin: 15px auto 0 auto;
+}
+
+.seccion-servicios {
+    background-color: #211E1B;
+    padding: 50px 8%;
+    text-align: center;
+    border-top: 1px solid rgba(245, 240, 232, 0.1);
+}
+
+.titulo-seccion {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    letter-spacing: 1px;
+    color: #F5F0E8;
+}
+
+.grid-servicios {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    max-width: 900px;
+    margin: 35px auto 0 auto;
+}
+
+.tarjeta-servicio {
+    background-color: #1A1715;
+    padding: 25px 15px;
+    border-radius: 4px;
+    border-top: 3px solid rgb(201, 39, 39);
+}
+
+.tarjeta-servicio h3 {
+    color: #F5F0E8;
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.precio-servicio {
+    color: #C9A227;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* 4. PIE DE PÁGINA */
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 5%;
+    font-size: 0.8rem;
+    color: rgb(201, 39, 39);
+    background-color: #111010;
+    border-top: 1px solid #222;
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 850px) {
+    .hero-fondo { height: 380px; }
+    .logo-flotante { max-width: 160px; }
+    .grid-servicios { grid-template-columns: repeat(2, 1fr); }
+}
+
+.sub-nav {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 5%;
+    background-color: #161311;
+    font-size: 0.82rem;
+    color: #8A8580;
+    letter-spacing: 0.5px;
+}
+
+.sub-nav a {
+    color: #8A8580;
+}
+
+.sub-nav a:hover {
+    color: rgb(201, 39, 39) !important;
+}
+
+.sub-nav-separador {
+    color: #444;
+}
+
+.seccion-galeria-publica {
+    padding: 60px 8%;
+    text-align: center;
+}
+
+.grid-galeria-publica {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+    max-width: 1100px;
+    margin: 30px auto 0 auto;
+}
+
+.item-galeria {
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 220px;
+}
+
+.item-galeria img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.etiqueta-barbero {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.85));
+    color: #fff;
+    padding: 20px 12px 10px 12px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.descripcion-servicio {
+    color: #8A8580;
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+/* 🔔 Ventana emergente (modal) de confirmación de citas */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-caja {
+    background-color: #1a1a1a;
+    padding: 35px 40px;
+    border-radius: 10px;
+    border-top: 4px solid rgb(201, 39, 39);
+    text-align: center;
+    max-width: 320px;
+}
+
+.modal-caja p {
+    color: #fff;
+    font-size: 1.05rem;
+    margin-bottom: 22px;
+}
+
+.modal-caja button {
+    background-color: rgb(201, 39, 39);
+    color: white;
+    border: none;
+    padding: 10px 34px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+/* 🗂️ Sub-pestañas dentro de Gestión de Citas */
+.sub-tab-btn {
+    padding: 9px 18px;
+    background-color: #1a1a1a;
+    color: #999;
+    border: 1px solid #2a2a2a;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.sub-tab-btn:hover {
+    border-color: rgb(201, 39, 39);
+    color: #ddd;
+}
+
+.sub-tab-btn.activo {
+    background-color: rgb(201, 39, 39);
+    color: #fff;
+    border-color: rgb(201, 39, 39);
+}

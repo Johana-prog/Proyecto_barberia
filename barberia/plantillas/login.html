@@ -1,44 +1,39 @@
-{% extends 'base.html' %}
+{% extends 'auth_base.html' %}
 
-{% block contenido %}
-<div style="max-width: 400px; margin: 60px auto; background-color: #1a1a1a; padding: 30px; border-radius: 8px; border-top: 4px solid rgb(201, 39, 39); box-shadow: 0 8px 24px rgba(201, 39, 39, 0.2);">
-    
-    <h2 style="color: rgb(201, 39, 39); text-align: center; margin-bottom: 20px; font-size: 1.8rem;">👤 BIENVENID@ </h2> <h4>Inicia sesión para acceder a tu panel</h4>  <br>
-    
-    <!-- Alerta roja de error por si se equivocan en los datos -->
+{% block formulario %}
+    <h1 class="auth-titulo">Iniciar sesión</h1>
+    <p class="auth-sub">Ingresa con tu correo y tu contraseña</p>
+
     {% if error %}
-        <div style="background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; padding: 10px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-size: 0.9rem; border: 1px solid #e74c3c;">
-            {{ error }}
-        </div>
+        <div class="alerta alerta-error">{{ error }}</div>
     {% endif %}
 
-    <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+    <form method="POST">
         {% csrf_token %}
 
-        <div>
-            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Correo Electrónico:</label>
-            <input type="email" name="correo" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+        <div class="campo">
+            <label for="correo">Correo</label>
+            <div class="campo-icono">
+                <svg class="ico"><use href="#i-mail"/></svg>
+                <input type="email" id="correo" name="correo" class="input" placeholder="tucorreo@ejemplo.com" required autofocus>
+            </div>
         </div>
 
-        <div>
-            <label style="display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem;">Contraseña:</label>
-            <input type="password" name="contraseña" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 4px;">
+        <div class="campo" style="margin-bottom: 24px;">
+            <label for="clave">Contraseña</label>
+            <div class="campo-icono">
+                <svg class="ico"><use href="#i-lock"/></svg>
+                <input type="password" id="clave" name="contraseña" class="input" placeholder="Tu contraseña" required>
+            </div>
         </div>
 
-        <!-- Botón Principal: Entrar al sistema -->
-        <button type="submit" style="background-color: rgb(201, 39, 39); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; transition: 0.3s; width: 100%;">
-           ⇨ Ingresar
+        <button type="submit" class="btn btn-primario btn-block">
+            <svg class="ico"><use href="#i-scissors"/></svg>Entrar
         </button>
-
-        <hr style="border: 0; height: 1px; background: #333; margin: 15px 0;">
-
-        <!-- 🎯 EL NUEVO ENLACE: Para mandar al usuario a registrarse si es nuevo -->
-        <div style="text-align: center;">
-            <p style="color: #888; font-size: 0.9rem; margin-bottom: 8px;">¿Eres nuevo en Usme Barber Top?</p>
-            <a href="/registro/" style="color: rgb(201, 39, 39); font-weight: bold; text-decoration: none; font-size: 0.95rem; transition: 0.3s;">
-                👉 CREA UNA CUENTA AQUÍ ✂️
-            </a>
-        </div>
     </form>
-</div>
+
+    <div class="auth-pie">
+        ¿No tienes cuenta? <a href="/registro/" class="auth-link">Regístrate</a><br>
+        <a href="/inicio/" class="auth-volver">← Volver al inicio</a>
+    </div>
 {% endblock %}

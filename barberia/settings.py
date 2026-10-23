@@ -127,8 +127,9 @@ STATIC_URL = 'static/'
 
 # Esta línea le enseña a Django a salir de la carpeta 'barberia' para buscar el diseño afuera
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, '../static'),
+    BASE_DIR / 'static',
 ]
+
 
 # 🖼️ Configuración para guardar y mostrar fotos de perfil
 MEDIA_URL = '/media/'

@@ -1,62 +1,135 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block contenido %}
-<div style="display: flex; width: 100%; min-height: calc(100vh - 60px);">
+<style>
+    .perfil-wrap { max-width: 540px; }
+    .perfil-header { text-align: center; }
 
+    .perfil-avatar-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .perfil-avatar {
+        width: 112px;
+        height: 112px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--dorado);
+    }
+
+    .perfil-avatar-vacio {
+        display: grid;
+        place-items: center;
+        background: var(--superficie-2);
+        color: var(--dorado);
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 3.2rem;
+    }
+
+    .perfil-rol {
+        color: var(--dorado);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .perfil-archivo { color: var(--piedra); font-size: 0.78rem; }
+
+    .fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    @media (max-width: 600px) { .fila-2 { grid-template-columns: 1fr; } }
+</style>
+
+<div class="panel-layout">
     {% include 'menu_lateral.html' %}
 
-    <div style="flex: 1; padding: 40px; display: flex; justify-content: center;">
-        <div style="width: 100%; max-width: 500px;">
-            <h2 style="color: #fff; margin-bottom: 5px; font-size: 1.6rem;">⚙️ Editar Mi Perfil</h2>
-            <p style="color: #888; margin-bottom: 25px; font-size: 0.9rem;">Actualiza tus datos personales y tu foto.</p>
+    <main class="panel-main">
+    <div class="panel-contenido perfil-wrap">
 
-            {% if mensaje %}
-                <div style="background-color: rgba(46, 204, 113, 0.15); color: #2ecc71; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center;">{{ mensaje }}</div>
-            {% endif %}
+        <header class="panel-header perfil-header">
+            <div class="panel-eyebrow">Mi cuenta</div>
+            <h1 class="panel-titulo">Editar perfil</h1>
+            <p class="panel-subtitulo">Actualiza tus datos personales y tu foto.</p>
+        </header>
 
-            <div style="background-color: #1a1a1a; padding: 30px; border-radius: 10px; border-top: 3px solid rgb(201, 39, 39);">
-                <form method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
+        {% if mensaje %}
+            <div class="alerta alerta-ok">{{ mensaje }}</div>
+        {% endif %}
 
-                    <!-- 📸 Foto actual + botón para cambiarla -->
-                    <div style="text-align: center; margin-bottom: 25px;">
-                        {% if usuario.foto %}
-                            <img src="{{ usuario.foto.url }}" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid rgb(201, 39, 39); margin-bottom: 12px;">
-                        {% else %}
-                            <div style="width: 110px; height: 110px; border-radius: 50%; background-color: #222; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; margin: 0 auto 12px auto;">👤</div>
-                        {% endif %}
-                        <label style="display: inline-block; background-color: #fff; color: #111; padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; cursor: pointer;">
-                            📷 Cambiar foto
-                            <input type="file" name="foto" accept="image/*" style="display: none;">
-                        </label>
+        <div class="card">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="perfil-avatar-box">
+                    {% if usuario.foto %}
+                        <img id="previewFoto" class="perfil-avatar" src="{{ usuario.foto.url }}" alt="Tu foto de perfil">
+                    {% else %}
+                        <img id="previewFoto" class="perfil-avatar" alt="Tu foto de perfil" style="display: none;">
+                        <span id="previewVacio" class="perfil-avatar perfil-avatar-vacio">{{ usuario.nombre|first|upper }}</span>
+                    {% endif %}
+
+                    <span class="perfil-rol">{{ usuario.rol }}</span>
+
+                    <label for="inputFoto" class="btn btn-borde btn-sm">
+                        <svg class="ico" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                        Cambiar foto
+                    </label>
+                    <input type="file" id="inputFoto" name="foto" accept="image/*" hidden>
+                    <span id="nombreArchivo" class="perfil-archivo"></span>
+                </div>
+
+                <div class="fila-2">
+                    <div class="campo">
+                        <label for="nombre">Nombre</label>
+                        <input type="text" id="nombre" name="nombre" class="input" value="{{ usuario.nombre }}" required>
                     </div>
-
-                    <div style="margin-bottom: 14px;">
-                        <label style="display: block; color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Nombre:</label>
-                        <input type="text" name="nombre" value="{{ usuario.nombre }}" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 6px;">
+                    <div class="campo">
+                        <label for="apellido">Apellido</label>
+                        <input type="text" id="apellido" name="apellido" class="input" value="{{ usuario.apellido }}" required>
                     </div>
+                </div>
 
-                    <div style="margin-bottom: 14px;">
-                        <label style="display: block; color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Apellido:</label>
-                        <input type="text" name="apellido" value="{{ usuario.apellido }}" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 6px;">
-                    </div>
+                <div class="campo">
+                    <label for="telefono">Teléfono</label>
+                    <input type="text" id="telefono" name="telefono" class="input" value="{{ usuario.telefono|default_if_none:'' }}">
+                </div>
 
-                    <div style="margin-bottom: 14px;">
-                        <label style="display: block; color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Teléfono:</label>
-                        <input type="text" name="telefono" value="{{ usuario.telefono }}" style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 6px;">
-                    </div>
+                <div class="campo" style="margin-bottom: 24px;">
+                    <label for="correo">Correo</label>
+                    <input type="email" id="correo" name="correo" class="input" value="{{ usuario.correo }}" required>
+                </div>
 
-                    <div style="margin-bottom: 22px;">
-                        <label style="display: block; color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Correo:</label>
-                        <input type="email" name="correo" value="{{ usuario.correo }}" required style="width: 100%; padding: 10px; background-color: #111; border: 1px solid #333; color: white; border-radius: 6px;">
-                    </div>
-
-                    <button type="submit" style="width: 100%; background-color: rgb(201, 39, 39); color: white; border: none; padding: 13px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
-                        GUARDAR CAMBIOS ✅
-                    </button>
-                </form>
-            </div>
+                <button type="submit" class="btn btn-primario btn-block">
+                    <svg class="ico"><use href="#i-scissors"/></svg>Guardar cambios
+                </button>
+            </form>
         </div>
+
     </div>
+    </main>
 </div>
+
+<script>
+    // Muestra la foto elegida antes de guardar
+    document.getElementById('inputFoto').addEventListener('change', function () {
+        var archivo = this.files[0];
+        if (!archivo) { return; }
+        var lector = new FileReader();
+        lector.onload = function (e) {
+            var img = document.getElementById('previewFoto');
+            img.src = e.target.result;
+            img.style.display = 'block';
+            var vacio = document.getElementById('previewVacio');
+            if (vacio) { vacio.style.display = 'none'; }
+            document.getElementById('nombreArchivo').textContent = archivo.name;
+        };
+        lector.readAsDataURL(archivo);
+    });
+</script>
 {% endblock %}

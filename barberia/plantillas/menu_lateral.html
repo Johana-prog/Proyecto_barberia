@@ -1,63 +1,159 @@
-<div style="width: 230px; min-width: 230px; background-color: #111; min-height: 100vh; padding: 20px 15px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #222;">
+<aside class="rail">
+<nav class="sidebar" id="sidebar" aria-label="Menú principal">
 
-        <!-- ⬅️ Volver: solo aparece si NO estás en la pantalla principal de tu rol -->
-    {% if request.path != '/panel-cliente/' and request.path != '/panel-barbero/' and request.path != '/dashboard-admin/' %}
-        <a href="javascript:history.back()" style="color: #666; text-decoration: none; font-size: 0.8rem; margin-bottom: 15px;">← Volver</a>
-    {% endif %}
+    <!-- Íconos (se dibujan una sola vez y se reutilizan) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="i-calendar" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+        <symbol id="i-calendar-check" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></symbol>
+        <symbol id="i-calendar-plus" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/><path d="M3 10h18"/><path d="M16 19h6"/><path d="M19 16v6"/></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+        <symbol id="i-banknote" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></symbol>
+        <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></symbol>
+        <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+        <symbol id="i-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></symbol>
+        <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+        <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></symbol>
+        <symbol id="i-back" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+    </svg>
 
-    <!-- 🧑 Foto y datos del usuario logueado -->
-    <div style="text-align: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #222;">
+    <!-- ✂️ Marca con tijera animada -->
+    <div class="sb-marca" id="sbMarca">
+        <span class="sb-marca-icono">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <g class="hoja hoja-a"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M14.8 14.8 20 20"/></g>
+                <g class="hoja hoja-b"><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88"/></g>
+            </svg>
+        </span>
+        <span class="sb-texto sb-marca-texto">USME BARBER TOP</span>
+    </div>
+
+    <!-- 🧑 Usuario -->
+    <div class="sb-usuario">
         {% if usuario_sesion.foto %}
-            <img src="{{ usuario_sesion.foto.url }}" style="width: 85px; height: 85px; border-radius: 50%; object-fit: cover; border: 3px solid rgb(201, 39, 39);">
+            <img class="sb-avatar" src="{{ usuario_sesion.foto.url }}" alt="">
         {% else %}
-            <div style="width: 85px; height: 85px; border-radius: 50%; background-color: #222; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto; border: 3px solid #333;">👤</div>
+            <span class="sb-avatar sb-avatar-vacio">{{ usuario_sesion.nombre|first|upper }}</span>
         {% endif %}
-        <p style="color: #fff; font-weight: bold; margin: 12px 0 2px 0; font-size: 1rem;">{{ usuario_sesion.nombre }} {{ usuario_sesion.apellido }}</p>
-        <p style="color: rgb(201, 39, 39); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin: 0; font-weight: bold;">{{ usuario_sesion.rol }}</p>
+        <div class="sb-texto sb-usuario-datos">
+            <strong>{{ usuario_sesion.nombre }} {{ usuario_sesion.apellido }}</strong>
+            <small>{{ usuario_sesion.rol }}</small>
+        </div>
     </div>
 
-    <!-- 🧭 Enlaces según el rol -->
-    {% if usuario_sesion.rol == 'cliente' %}
-        <a href="/panel-cliente/" class="link-lateral">🏠 Mi Agenda</a>
-        <a href="/agendar/" class="link-lateral">✂️ Solicitar Turno</a>
+    <!-- 🧭 Opciones -->
+    <div class="sb-menu">
 
-    {% elif usuario_sesion.rol == 'barbero' %}
-        <a href="/panel-barbero/#agenda-sec" id="btn-agenda" class="link-lateral b-tab-btn" style="background-color: rgb(201, 39, 39);" onclick="return cambiarPestanaLateral('agenda-sec','btn-agenda')">📅 Publicar Horarios</a>
-        <a href="/panel-barbero/#turnos-sec" id="btn-turnos" class="link-lateral b-tab-btn" onclick="return cambiarPestanaLateral('turnos-sec','btn-turnos')">✂️ Servicios Reservados</a>
-        <a href="/panel-barbero/#portafolio-sec" id="btn-portafolio" class="link-lateral b-tab-btn" onclick="return cambiarPestanaLateral('portafolio-sec','btn-portafolio')">🌟 Mi Portafolio</a>
-        <a href="/registro/" class="link-lateral" style="margin-top: 8px; border-top: 1px solid #222; padding-top: 16px;">➕ Registrar Usuario</a>
+        {% if request.path != '/panel-cliente/' and request.path != '/panel-barbero/' and request.path != '/dashboard-admin/' %}
+            <a href="javascript:history.back()" class="nav-item">
+                <svg class="ico"><use href="#i-back"/></svg><span class="sb-texto">Volver</span>
+            </a>
+            <div class="sb-sep" style="margin: 4px 0;"></div>
+        {% endif %}
 
-    {% elif usuario_sesion.rol == 'administrador' %}
-        <a href="/dashboard-admin/#citas-sec" id="btn-citas" class="link-lateral tab-btn" style="background-color: rgb(201, 39, 39);" onclick="return cambiarPestanaLateral('citas-sec','btn-citas')">📅 Gestión de Citas</a>
-        <a href="/dashboard-admin/#usuarios-sec" id="btn-usuarios" class="link-lateral tab-btn" onclick="return cambiarPestanaLateral('usuarios-sec','btn-usuarios')">👥 Control de Usuarios</a>
-        <a href="/dashboard-admin/#servicios-sec" id="btn-servicios" class="link-lateral tab-btn" onclick="return cambiarPestanaLateral('servicios-sec','btn-servicios')">💰 Tarifas y Servicios</a>
-        <a href="/registro/" class="link-lateral" style="margin-top: 8px; border-top: 1px solid #222; padding-top: 16px;">➕ Registrar Usuario</a>
-    {% endif %}
+        {% if usuario_sesion.rol == 'cliente' %}
+            <a href="/panel-cliente/" class="nav-item" data-path="/panel-cliente/" data-default="1">
+                <svg class="ico"><use href="#i-calendar-check"/></svg><span class="sb-texto">Mi Agenda</span>
+            </a>
+            <a href="/agendar/" class="nav-item" data-path="/agendar/" data-default="1">
+                <svg class="ico"><use href="#i-scissors"/></svg><span class="sb-texto">Solicitar Turno</span>
+            </a>
 
-    <a href="/perfil/" class="link-lateral" style="margin-top: 10px;">⚙️ Editar Perfil</a>
+        {% elif usuario_sesion.rol == 'barbero' %}
+            <a href="/panel-barbero/#agenda-sec" id="btn-agenda" class="nav-item b-tab-btn" data-path="/panel-barbero/" data-hash="#agenda-sec" data-default="1" onclick="return cambiarPestanaLateral('agenda-sec','btn-agenda')">
+                <svg class="ico"><use href="#i-calendar-plus"/></svg><span class="sb-texto">Publicar Horarios</span>
+            </a>
+            <a href="/panel-barbero/#turnos-sec" id="btn-turnos" class="nav-item b-tab-btn" data-path="/panel-barbero/" data-hash="#turnos-sec" onclick="return cambiarPestanaLateral('turnos-sec','btn-turnos')">
+                <svg class="ico"><use href="#i-scissors"/></svg><span class="sb-texto">Servicios Reservados</span>
+            </a>
+            <a href="/panel-barbero/#portafolio-sec" id="btn-portafolio" class="nav-item b-tab-btn" data-path="/panel-barbero/" data-hash="#portafolio-sec" onclick="return cambiarPestanaLateral('portafolio-sec','btn-portafolio')">
+                <svg class="ico"><use href="#i-image"/></svg><span class="sb-texto">Mi Portafolio</span>
+            </a>
+            <a href="/registro/" class="nav-item" data-path="/registro/">
+                <svg class="ico"><use href="#i-user-plus"/></svg><span class="sb-texto">Registrar Usuario</span>
+            </a>
 
-    <div style="margin-top: auto;">
-        <a href="/cerrar/" style="color: #e74c3c; text-decoration: none; padding: 12px 14px; border-radius: 6px; font-size: 0.9rem; display: block;">🚪 Cerrar Sesión</a>
+        {% elif usuario_sesion.rol == 'administrador' %}
+            <a href="/dashboard-admin/#citas-sec" id="btn-citas" class="nav-item tab-btn" data-path="/dashboard-admin/" data-hash="#citas-sec" data-default="1" onclick="return cambiarPestanaLateral('citas-sec','btn-citas')">
+                <svg class="ico"><use href="#i-calendar"/></svg><span class="sb-texto">Gestión de Citas</span>
+            </a>
+            <a href="/dashboard-admin/#usuarios-sec" id="btn-usuarios" class="nav-item tab-btn" data-path="/dashboard-admin/" data-hash="#usuarios-sec" onclick="return cambiarPestanaLateral('usuarios-sec','btn-usuarios')">
+                <svg class="ico"><use href="#i-users"/></svg><span class="sb-texto">Control de Usuarios</span>
+            </a>
+            <a href="/dashboard-admin/#servicios-sec" id="btn-servicios" class="nav-item tab-btn" data-path="/dashboard-admin/" data-hash="#servicios-sec" onclick="return cambiarPestanaLateral('servicios-sec','btn-servicios')">
+                <svg class="ico"><use href="#i-banknote"/></svg><span class="sb-texto">Tarifas y Servicios</span>
+            </a>
+            <a href="/registro/" class="nav-item" data-path="/registro/">
+                <svg class="ico"><use href="#i-user-plus"/></svg><span class="sb-texto">Registrar Usuario</span>
+            </a>
+        {% endif %}
+
+        <a href="/perfil/" class="nav-item" data-path="/perfil/" data-default="1">
+            <svg class="ico"><use href="#i-user"/></svg><span class="sb-texto">Editar Perfil</span>
+        </a>
     </div>
-</div>
 
-<style>
-    .link-lateral {
-        color: #ddd;
-        text-decoration: none;
-        padding: 12px 14px;
-        border-radius: 6px;
-        font-size: 0.9rem;
-        display: block;
-    }
-    .link-lateral:hover {
-        color: rgb(201, 39, 39) !important;
-    }
-</style>
+    <div class="sb-pie">
+        <a href="/cerrar/" class="nav-item salir">
+            <svg class="ico"><use href="#i-logout"/></svg><span class="sb-texto">Cerrar Sesión</span>
+        </a>
+    </div>
+</nav>
+</aside>
 
 <script>
-    // 🔗 Si la sección ya existe en esta misma página, cambiamos de pestaña sin recargar.
-    // Si no existe (estamos en otra pantalla), dejamos que el enlace navegue normal hacia el panel.
+    (function () {
+        var sidebar = document.getElementById('sidebar');
+        var marca = document.getElementById('sbMarca');
+        var items = sidebar.querySelectorAll('.nav-item');
+
+        function snip() {
+            marca.classList.remove('snip');
+            void marca.offsetWidth;
+            marca.classList.add('snip');
+        }
+
+        function marcar(el) {
+            items.forEach(function (i) { i.classList.remove('activo'); });
+            if (el) { el.classList.add('activo'); }
+            snip();
+        }
+
+        // Al cargar: marcar la opción que corresponde a la página (y pestaña) actual
+        var ruta = window.location.pathname;
+        var hash = window.location.hash;
+        var candidatos = [];
+        items.forEach(function (i) { if (i.dataset.path === ruta) { candidatos.push(i); } });
+        var elegido = null;
+        if (candidatos.length) {
+            elegido = candidatos.find(function (i) { return hash && i.dataset.hash === hash; })
+                   || candidatos.find(function (i) { return i.dataset.default === '1'; })
+                   || candidatos[0];
+        }
+        if (elegido) { elegido.classList.add('activo'); }
+
+        // En celular (sin mouse): tocar la tijera abre y cierra el menú
+        marca.addEventListener('click', function () { sidebar.classList.toggle('abierto'); });
+        document.addEventListener('click', function (e) {
+            if (!sidebar.contains(e.target)) { sidebar.classList.remove('abierto'); }
+        });
+
+        // Cada vez que un panel cambia de pestaña, el menú marca la opción correcta
+        document.addEventListener('DOMContentLoaded', function () {
+            ['abrirPestana', 'abrirBarberoPestana'].forEach(function (nombre) {
+                var original = window[nombre];
+                if (typeof original === 'function') {
+                    window[nombre] = function (idSeccion, idBoton) {
+                        original(idSeccion, idBoton);
+                        var btn = document.getElementById(idBoton);
+                        if (btn) { marcar(btn); }
+                    };
+                }
+            });
+        });
+    })();
+
+    // Si ya estás en el panel correcto, cambia de pestaña sin recargar.
+    // Si estás en otra pantalla, el enlace te lleva al panel.
     function cambiarPestanaLateral(idSeccion, idBoton) {
         if (document.getElementById(idSeccion)) {
             if (typeof abrirPestana === 'function') { abrirPestana(idSeccion, idBoton); }

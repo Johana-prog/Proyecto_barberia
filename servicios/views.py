@@ -1,6 +1,63 @@
+from functools import wraps
 from django.shortcuts import render, redirect
+from django.contrib.auth.hashers import make_password, check_password, identify_hasher
 from servicios.models import Servicio, Usuario, Barbero, Cita, BarberoServicioEstrella, FotoTrabajoBarbero
 import datetime
+
+# =========================================================================
+# 🔐 SEGURIDAD: contraseñas cifradas y control de acceso por rol
+# =========================================================================
+def esta_cifrada(valor):
+    """True si el texto ya es un hash de Django (y no una contraseña en texto plano)."""
+    try:
+        identify_hasher(valor)
+        return True
+    except ValueError:
+        return False
+
+
+def verificar_clave(usuario, clave):
+    """Compara la clave escrita con la guardada. Si la cuenta es antigua
+    (texto plano), la acepta una vez y la cifra en el momento."""
+    guardada = usuario.contraseña or ''
+    if esta_cifrada(guardada):
+        return check_password(clave, guardada)
+    if guardada == clave:
+        usuario.contraseña = make_password(clave)
+        usuario.save()
+        return True
+    return False
+
+
+def cifrar_claves_existentes():
+    """Se ejecuta UNA sola vez desde el shell: cifra las cuentas que siguen en texto plano."""
+    cifradas = 0
+    for u in Usuario.objects.all():
+        if not esta_cifrada(u.contraseña or ''):
+            u.contraseña = make_password(u.contraseña)
+            u.save()
+            cifradas += 1
+    return cifradas
+
+
+def solo_rol(*roles_permitidos):
+    """Protege una vista: solo entra quien tenga uno de los roles indicados."""
+    def decorador(vista):
+        @wraps(vista)
+        def envoltura(request, *args, **kwargs):
+            correo = request.session.get('cliente_correo')
+            if not correo:
+                return redirect('login')
+            try:
+                usuario = Usuario.objects.get(correo=correo)
+            except Usuario.DoesNotExist:
+                request.session.flush()
+                return redirect('login')
+            if usuario.rol not in roles_permitidos:
+                return redirect('login')
+            return vista(request, *args, **kwargs)
+        return envoltura
+    return decorador
 
 # 🏠 1. BIENVENIDA PÚBLICA
 def inicio_barberia(request):
@@ -25,6 +82,8 @@ def galeria_fotos_publica(request):
 
 # 📝 2. REGISTRO
 def registrar_cliente(request):
+    contexto = {'sesion_activa': 'cliente_nombre' in request.session}
+
     if request.method == 'POST':
         nom = request.POST.get('nombre')
         ape = request.POST.get('apellido')
@@ -33,17 +92,26 @@ def registrar_cliente(request):
         cla = request.POST.get('contraseña')
 
         if Usuario.objects.filter(documento=doc).exists():
-            return render(request, 'registro.html', {'mensaje_error': '⚠️ Este documento ya existe.'})
+            contexto['mensaje_error'] = '⚠️ Este documento ya existe.'
+            return render(request, 'registro.html', contexto)
         if Usuario.objects.filter(correo=cor).exists():
-            return render(request, 'registro.html', {'mensaje_error': '⚠️ Este correo ya está en uso.'})
+            contexto['mensaje_error'] = '⚠️ Este correo ya está en uso.'
+            return render(request, 'registro.html', contexto)
 
         try:
-            nuevo = Usuario(nombre=nom, apellido=ape, documento=doc, correo=cor, contraseña=cla, rol="cliente", estado=1)
+            nuevo = Usuario(
+                nombre=nom, apellido=ape, documento=doc, correo=cor,
+                contraseña=make_password(cla),
+                rol="cliente", estado=1
+            )
             nuevo.save()
-            return render(request, 'registro.html', {'mensaje': '¡Cuenta creada con éxito!'})
+            contexto['mensaje'] = '¡Cuenta creada con éxito!'
+            return render(request, 'registro.html', contexto)
         except Exception as e:
-            return render(request, 'registro.html', {'mensaje_error': f'⚠️ Error: {e}'})
-    return render(request, 'registro.html')
+            contexto['mensaje_error'] = f'⚠️ Error: {e}'
+            return render(request, 'registro.html', contexto)
+
+    return render(request, 'registro.html', contexto)
 
 # 👤 3. LOGIN INTERCONECTADO
 def iniciar_sesion(request):
@@ -54,22 +122,26 @@ def iniciar_sesion(request):
         else: return redirect('panel_cliente')
 
     if request.method == 'POST':
-        correo_digitado = request.POST.get('correo')
-        clave_digitada = request.POST.get('contraseña')
+        correo_digitado = request.POST.get('correo', '').strip()
+        clave_digitada = request.POST.get('contraseña', '')
 
         try:
             user = Usuario.objects.get(correo=correo_digitado)
-            if user.contraseña == clave_digitada:
-                request.session['cliente_nombre'] = user.nombre
-                request.session['cliente_correo'] = user.correo
-                request.session['cliente_rol'] = user.rol
-                if user.rol == 'administrador': return redirect('panel_admin')
-                elif user.rol == 'barbero': return redirect('panel_barbero')
-                else: return redirect('panel_cliente')
-            else:
-                return render(request, 'login.html', {"error": "⚠️ Contraseña incorrecta."})
         except Usuario.DoesNotExist:
-            return render(request, 'login.html', {"error": "⚠️ Este correo no existe."})
+            user = None
+
+        if user is None or not verificar_clave(user, clave_digitada):
+            return render(request, 'login.html', {"error": "Correo o contraseña incorrectos."})
+
+        request.session.cycle_key()
+        request.session['cliente_nombre'] = user.nombre
+        request.session['cliente_correo'] = user.correo
+        request.session['cliente_rol'] = user.rol
+
+        if user.rol == 'administrador': return redirect('panel_admin')
+        elif user.rol == 'barbero': return redirect('panel_barbero')
+        else: return redirect('panel_cliente')
+
     return render(request, 'login.html')
 
 # 👑 4. PANEL CLIENTE
@@ -119,6 +191,7 @@ def configurar_perfil(request):
 # =========================================================================
 # 💈 6. PANEL BARBERO (¡Ahora cada barbero ve SUS propias citas!)
 # =========================================================================
+@solo_rol('barbero')
 def panel_barbero(request):
     if 'cliente_nombre' not in request.session: return redirect('login')
     msg_alerta = None
@@ -228,6 +301,7 @@ def panel_barbero(request):
 # =========================================================================
 # 💼 7. PANEL ADMINISTRADOR (¡Con Módulo de Cobros, Caja Real y Cambio de Precios!)
 # =========================================================================
+@solo_rol('administrador')
 def panel_administrador(request):
     if 'cliente_nombre' not in request.session: return redirect('login')
     msg_alerta = None
