@@ -51,7 +51,7 @@
                 {% for s in servicios %}
                     <div class="fila">
                         <span>{{ s.nombre_servicio }}</span>
-                        <span class="precio">${{ s.precio|floatformat:"0" }} COP</span>
+                        <span class="precio">${{ s.precio|floatformat:"0g" }} COP</span>
                     </div>
                 {% empty %}
                     <div class="vacio">Aún no hay servicios publicados.</div>

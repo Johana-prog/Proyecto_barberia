@@ -1,20 +1,166 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block contenido %}
-<div class="seccion-galeria-publica">
-    <h2 class="titulo-seccion">Galería de Trabajos</h2>
-    <div class="linea-dorada centrada"></div>
-    <p style="color: #8A8580; margin-top: 10px;">Descubre el trabajo real de nuestro equipo de barberos.</p>
+<style>
+    .estilos-pagina { max-width: 1200px; margin: 0 auto; padding: 48px 6% 70px; }
 
-    <div class="grid-galeria-publica">
-        {% for f in fotos %}
-            <div class="item-galeria">
-                <img src="{{ f.imagen.url }}">
-                <div class="etiqueta-barbero">✂️ {{ f.id_barbero.id_usuario.nombre }}</div>
-            </div>
-        {% empty %}
-            <p style="color: #556;">Todavía no hay fotos de trabajos publicadas.</p>
+    .filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+
+    .filtro {
+        display: inline-flex;
+        align-items: center;
+        height: 38px;
+        padding: 0 16px;
+        border: 1px solid var(--borde);
+        border-radius: var(--radio);
+        background: var(--superficie);
+        color: var(--piedra);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+
+    .filtro:hover { border-color: var(--dorado); color: var(--hueso) !important; }
+    .filtro.activo { background: var(--burdeos); border-color: var(--burdeos); color: var(--hueso); }
+    .filtro.activo:hover { color: var(--hueso) !important; }
+
+    .estilos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 22px;
+    }
+
+    .estilo-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--superficie);
+        border: 1px solid var(--borde);
+        border-radius: 14px;
+        overflow: hidden;
+        transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .estilo-card:hover { border-color: var(--borde-fuerte); transform: translateY(-3px); }
+
+    .estilo-foto { aspect-ratio: 4 / 5; overflow: hidden; background: var(--carbon); cursor: zoom-in; }
+
+    .estilo-foto img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.4s;
+    }
+
+    .estilo-card:hover .estilo-foto img { transform: scale(1.04); }
+
+    .estilo-info { display: flex; flex-direction: column; gap: 6px; flex: 1; padding: 16px 18px 18px; }
+
+    .estilo-tag {
+        align-self: flex-start;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(201, 162, 39, 0.4);
+        background: var(--dorado-suave);
+        color: var(--dorado);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+    }
+
+    .estilo-info h3 { color: var(--hueso); font-size: 1.05rem; }
+    .estilo-barbero { color: var(--piedra); font-size: 0.82rem; }
+    .estilo-precio { color: var(--dorado); font-weight: 700; font-size: 0.95rem; }
+    .estilo-info .btn { margin-top: auto; }
+
+    .visor {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(10, 8, 7, 0.92);
+        cursor: zoom-out;
+    }
+
+    .visor img { max-width: 90vw; max-height: 88vh; border-radius: 12px; }
+</style>
+
+{% if not usuario_sesion %}
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></symbol>
+</svg>
+{% endif %}
+
+{% if usuario_sesion %}<div class="panel-layout">{% include 'menu_lateral.html' %}<main class="panel-main">{% endif %}
+
+<div class="estilos-pagina">
+
+    <header class="panel-header">
+        <div class="panel-eyebrow">Catálogo</div>
+        <h1 class="panel-titulo">Estilos de corte</h1>
+        <p class="panel-subtitulo">Mira el trabajo real de nuestros barberos y reserva el estilo que más te guste.</p>
+    </header>
+
+    <div class="filtros">
+        <a href="/galeria/" class="filtro {% if not servicio_filtro %}activo{% endif %}">Todos</a>
+        {% for s in servicios %}
+            <a href="/galeria/?servicio={{ s.id_servicio }}" class="filtro {% if servicio_filtro == s.id_servicio|stringformat:'d' %}activo{% endif %}">{{ s.nombre_servicio }}</a>
         {% endfor %}
     </div>
+
+    <div class="estilos-grid">
+        {% for f in fotos %}
+            <article class="estilo-card">
+                <div class="estilo-foto">
+                    <img src="{{ f.imagen.url }}" alt="{{ f.nombre_estilo|default:'Estilo de corte' }}" loading="lazy">
+                </div>
+                <div class="estilo-info">
+                    {% if f.id_servicio %}<span class="estilo-tag">{{ f.id_servicio.nombre_servicio }}</span>{% endif %}
+                    <h3>{{ f.nombre_estilo|default:"Corte a medida" }}</h3>
+                    <p class="estilo-barbero">Por {{ f.id_barbero.id_usuario.nombre }}</p>
+                    {% if f.id_servicio %}<p class="estilo-precio">${{ f.id_servicio.precio|floatformat:"0g" }} COP</p>{% endif %}
+
+                    {% if usuario_sesion.rol == 'cliente' %}
+                        <a href="/agendar/{% if f.id_servicio %}?servicio={{ f.id_servicio.id_servicio }}{% endif %}" class="btn btn-primario btn-sm btn-block" style="margin-top: 12px;">
+                            <svg class="ico"><use href="#i-scissors"/></svg>Reservar este estilo
+                        </a>
+                    {% elif not usuario_sesion %}
+                        <a href="/login/" class="btn btn-borde btn-sm btn-block" style="margin-top: 12px;">Inicia sesión para reservar</a>
+                    {% endif %}
+                </div>
+            </article>
+        {% empty %}
+            <div class="vacio" style="grid-column: 1 / -1;">Todavía no hay estilos publicados{% if servicio_filtro %} para este servicio{% endif %}.</div>
+        {% endfor %}
+    </div>
+
 </div>
+
+{% if usuario_sesion %}</main></div>{% endif %}
+
+<div id="visor" class="visor"><img id="visorImg" alt=""></div>
+
+<script>
+    (function () {
+        var visor = document.getElementById('visor');
+        var imgGrande = document.getElementById('visorImg');
+
+        document.querySelectorAll('.estilo-foto img').forEach(function (img) {
+            img.addEventListener('click', function () {
+                imgGrande.src = img.src;
+                visor.style.display = 'flex';
+            });
+        });
+
+        visor.addEventListener('click', function () { visor.style.display = 'none'; });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { visor.style.display = 'none'; }
+        });
+    })();
+</script>
 {% endblock %}

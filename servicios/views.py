@@ -1,11 +1,14 @@
 from functools import wraps
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.hashers import make_password, check_password, identify_hasher
 from servicios.models import Servicio, Usuario, Barbero, Cita, BarberoServicioEstrella, FotoTrabajoBarbero
 import datetime
 
+ROLES_VALIDOS = ('cliente', 'barbero', 'administrador')
+
+
 # =========================================================================
-# 🔐 SEGURIDAD: contraseñas cifradas y control de acceso por rol
+# SEGURIDAD: contraseñas cifradas y control de acceso por rol
 # =========================================================================
 def esta_cifrada(valor):
     """True si el texto ya es un hash de Django (y no una contraseña en texto plano)."""
@@ -40,6 +43,15 @@ def cifrar_claves_existentes():
     return cifradas
 
 
+def url_panel(rol):
+    """Nombre de la ruta del panel que le corresponde a cada rol."""
+    if rol == 'administrador':
+        return 'panel_admin'
+    if rol == 'barbero':
+        return 'panel_barbero'
+    return 'panel_cliente'
+
+
 def solo_rol(*roles_permitidos):
     """Protege una vista: solo entra quien tenga uno de los roles indicados."""
     def decorador(vista):
@@ -53,13 +65,24 @@ def solo_rol(*roles_permitidos):
             except Usuario.DoesNotExist:
                 request.session.flush()
                 return redirect('login')
-            if usuario.rol not in roles_permitidos:
+
+            if usuario.rol not in ROLES_VALIDOS:
+                request.session.flush()
                 return redirect('login')
+
+            # Mantiene la sesión sincronizada con el rol real de la base de datos
+            request.session['cliente_rol'] = usuario.rol
+
+            if usuario.rol not in roles_permitidos:
+                return redirect(url_panel(usuario.rol))
             return vista(request, *args, **kwargs)
         return envoltura
     return decorador
 
-# 🏠 1. BIENVENIDA PÚBLICA
+
+# =========================================================================
+# 1. BIENVENIDA PÚBLICA
+# =========================================================================
 def inicio_barberia(request):
     ahora = datetime.datetime.now().strftime("%d/%m/%Y a las %H:%M")
     servicios_base_datos = Servicio.objects.all()
@@ -70,17 +93,31 @@ def inicio_barberia(request):
         "fecha_actual": ahora,
         "sesion_activa": 'cliente_nombre' in request.session
     })
+
+
 # =========================================================================
-# 🖼️ GALERÍA PÚBLICA: Fotos de TODOS los barberos juntas
+# GALERÍA PÚBLICA: catálogo de estilos de TODOS los barberos
 # =========================================================================
 def galeria_fotos_publica(request):
-    fotos = FotoTrabajoBarbero.objects.select_related('id_barbero__id_usuario').order_by('-fecha_subida')
+    fotos = FotoTrabajoBarbero.objects.select_related('id_barbero__id_usuario', 'id_servicio').order_by('-fecha_subida', '-id_foto')
+
+    servicio_filtro = request.GET.get('servicio')
+    if servicio_filtro and servicio_filtro.isdigit():
+        fotos = fotos.filter(id_servicio=servicio_filtro)
+    else:
+        servicio_filtro = None
+
     return render(request, 'galeria_publica.html', {
         'fotos': fotos,
+        'servicios': Servicio.objects.all(),
+        'servicio_filtro': servicio_filtro,
         'sesion_activa': 'cliente_nombre' in request.session
     })
 
-# 📝 2. REGISTRO
+
+# =========================================================================
+# 2. REGISTRO
+# =========================================================================
 def registrar_cliente(request):
     contexto = {'sesion_activa': 'cliente_nombre' in request.session}
 
@@ -92,10 +129,10 @@ def registrar_cliente(request):
         cla = request.POST.get('contraseña')
 
         if Usuario.objects.filter(documento=doc).exists():
-            contexto['mensaje_error'] = '⚠️ Este documento ya existe.'
+            contexto['mensaje_error'] = 'Atención: Este documento ya existe.'
             return render(request, 'registro.html', contexto)
         if Usuario.objects.filter(correo=cor).exists():
-            contexto['mensaje_error'] = '⚠️ Este correo ya está en uso.'
+            contexto['mensaje_error'] = 'Atención: Este correo ya está en uso.'
             return render(request, 'registro.html', contexto)
 
         try:
@@ -108,18 +145,18 @@ def registrar_cliente(request):
             contexto['mensaje'] = '¡Cuenta creada con éxito!'
             return render(request, 'registro.html', contexto)
         except Exception as e:
-            contexto['mensaje_error'] = f'⚠️ Error: {e}'
+            contexto['mensaje_error'] = f'Atención: Error: {e}'
             return render(request, 'registro.html', contexto)
 
     return render(request, 'registro.html', contexto)
 
-# 👤 3. LOGIN INTERCONECTADO
+
+# =========================================================================
+# 3. LOGIN INTERCONECTADO
+# =========================================================================
 def iniciar_sesion(request):
     if 'cliente_nombre' in request.session and 'cliente_rol' in request.session and request.method == 'GET':
-        rol = request.session['cliente_rol']
-        if rol == 'administrador': return redirect('panel_admin')
-        elif rol == 'barbero': return redirect('panel_barbero')
-        else: return redirect('panel_cliente')
+        return redirect(url_panel(request.session['cliente_rol']))
 
     if request.method == 'POST':
         correo_digitado = request.POST.get('correo', '').strip()
@@ -138,28 +175,37 @@ def iniciar_sesion(request):
         request.session['cliente_correo'] = user.correo
         request.session['cliente_rol'] = user.rol
 
-        if user.rol == 'administrador': return redirect('panel_admin')
-        elif user.rol == 'barbero': return redirect('panel_barbero')
-        else: return redirect('panel_cliente')
+        return redirect(url_panel(user.rol))
 
     return render(request, 'login.html')
 
-# 👑 4. PANEL CLIENTE
+
+# =========================================================================
+# 4. PANEL CLIENTE
+# =========================================================================
+@solo_rol('cliente')
 def panel_cliente(request):
-    if 'cliente_nombre' not in request.session: return redirect('login')
     usuario_actual = Usuario.objects.get(correo=request.session['cliente_correo'])
-    barberos_base_datos = Barbero.objects.all()
-    mis_citas = Cita.objects.filter(id_cliente=usuario_actual).order_by('fecha', 'hora')
-    servicios_disponibles = Servicio.objects.all()
+    mis_citas = list(Cita.objects.filter(id_cliente=usuario_actual).order_by('fecha', 'hora'))
+
+    # Mostramos solo el nombre del servicio (sin el precio que va después de la barra)
+    for c in mis_citas:
+        if c.observaciones and '|' in c.observaciones:
+            c.nombre_limpio_servicio = c.observaciones.split('|')[0]
+        else:
+            c.nombre_limpio_servicio = c.observaciones
+
     return render(request, 'panel_cliente.html', {
         "cliente": request.session['cliente_nombre'],
-        "barberos": barberos_base_datos,
+        "barberos": Barbero.objects.all(),
         "citas": mis_citas,
-        "servicios": servicios_disponibles,
+        "servicios": Servicio.objects.all(),
         "sesion_activa": True
     })
+
+
 # =========================================================================
-# ⚙️ 5. PERFIL (con foto de perfil profesional, compartido por los 3 roles)
+# 5. PERFIL (con foto de perfil, compartido por los 3 roles)
 # =========================================================================
 def configurar_perfil(request):
     if 'cliente_correo' not in request.session: return redirect('login')
@@ -172,7 +218,7 @@ def configurar_perfil(request):
         usuario_actual.telefono = request.POST.get('telefono')
         usuario_actual.correo = request.POST.get('correo')
 
-        # 📸 Solo cambiamos la foto si el usuario subió una nueva
+        # Solo cambiamos la foto si el usuario subió una nueva
         if request.FILES.get('foto'):
             usuario_actual.foto = request.FILES['foto']
 
@@ -188,24 +234,24 @@ def configurar_perfil(request):
         'mensaje': mensaje,
         'sesion_activa': True
     })
+
+
 # =========================================================================
-# 💈 6. PANEL BARBERO (¡Ahora cada barbero ve SUS propias citas!)
+# 6. PANEL BARBERO (cada barbero ve SUS propias citas)
 # =========================================================================
 @solo_rol('barbero')
 def panel_barbero(request):
-    if 'cliente_nombre' not in request.session: return redirect('login')
     msg_alerta = None
     msg_modal = None
 
+    usuario_logueado = Usuario.objects.get(correo=request.session['cliente_correo'])
     try:
-        usuario_logueado = Usuario.objects.get(correo=request.session['cliente_correo'])
         barbero_obj = Barbero.objects.get(id_usuario=usuario_logueado)
     except Barbero.DoesNotExist:
         return render(request, 'panel_barbero.html', {
-            "cliente": request.session['cliente_nombre'],
             "citas": [],
             "sesion_activa": True,
-            "alerta": "⚠️ Tu cuenta no tiene una ficha de barbero asociada. Pide al administrador que la revise."
+            "alerta": "Atención: Tu cuenta no tiene una ficha de barbero asociada. Pide al administrador que la revise."
         })
 
     if request.method == 'POST':
@@ -215,19 +261,32 @@ def panel_barbero(request):
             for id_serv in ids_marcados:
                 servicio_obj = Servicio.objects.get(id_servicio=id_serv)
                 BarberoServicioEstrella.objects.create(id_barbero=barbero_obj, id_servicio=servicio_obj)
-            msg_alerta = "🌟 ¡Tus servicios estrella se actualizaron con éxito!"
+            msg_alerta = "¡Tus servicios estrella se actualizaron con éxito!"
 
         elif 'subir_foto' in request.POST:
-            if request.FILES.get('foto_trabajo'):
-                FotoTrabajoBarbero.objects.create(id_barbero=barbero_obj, imagen=request.FILES['foto_trabajo'])
-                msg_alerta = "📸 ¡Foto agregada a tu portafolio!"
+            archivo = request.FILES.get('foto_trabajo')
+            if not archivo:
+                msg_alerta = "Atención: No seleccionaste ninguna foto."
+            elif archivo.size > 5 * 1024 * 1024:
+                msg_alerta = "Atención: La foto pesa más de 5 MB. Elige una más liviana."
+            elif not archivo.content_type.startswith('image/'):
+                msg_alerta = "Atención: El archivo que elegiste no es una imagen."
             else:
-                msg_alerta = "⚠️ No seleccionaste ninguna foto."
+                id_serv = request.POST.get('servicio_foto')
+                servicio_rel = Servicio.objects.filter(id_servicio=id_serv).first() if id_serv else None
+                nombre = (request.POST.get('nombre_estilo') or '').strip()[:80]
+                FotoTrabajoBarbero.objects.create(
+                    id_barbero=barbero_obj,
+                    imagen=archivo,
+                    nombre_estilo=nombre or None,
+                    id_servicio=servicio_rel,
+                )
+                msg_alerta = "¡Foto agregada a tu portafolio!"
 
         elif 'eliminar_foto' in request.POST:
             id_f = request.POST.get('id_foto')
             FotoTrabajoBarbero.objects.filter(id_foto=id_f, id_barbero=barbero_obj).delete()
-            msg_alerta = "🗑️ Foto eliminada de tu portafolio."
+            msg_alerta = "Foto eliminada de tu portafolio."
 
         elif 'crear_espacio' in request.POST:
             fec = request.POST.get('fecha')
@@ -252,24 +311,25 @@ def panel_barbero(request):
                         turnos_creados += 1
 
                 if turnos_creados > 0:
-                    msg_alerta = f"⚡ ¡Éxito! Generaste en bloque {turnos_creados} turnos disponibles para el día {fec}."
+                    msg_alerta = f"¡Éxito! Generaste en bloque {turnos_creados} turnos disponibles para el día {fec}."
                 else:
-                    msg_alerta = "⚠️ Esos horarios ya se encontraban publicados en tu agenda."
+                    msg_alerta = "Atención: Esos horarios ya se encontraban publicados en tu agenda."
             except Exception as e:
-                msg_alerta = f"⚠️ Cortocircuito en la generación de agenda: {e}"
+                msg_alerta = f"Atención: No se pudo generar la agenda: {e}"
 
         elif 'id_cita' in request.POST:
             id_c = request.POST.get('id_cita')
-            cita = Cita.objects.get(id_cita=id_c)
+            # Solo puede tocar SUS propias citas
+            cita = Cita.objects.get(id_cita=id_c, id_barbero=barbero_obj)
             if 'confirmar_cita' in request.POST:
                 cita.estado = 'confirmada'
-                msg_modal = "✅ Cita confirmada con éxito."
+                msg_modal = "Cita confirmada con éxito."
             elif 'atender_cita' in request.POST:
                 cita.estado = 'atendida'
-                msg_modal = "✂️ Turno completado y pasado a cobros."
+                msg_modal = "Turno completado y pasado a cobros."
             elif 'cancelar_cita' in request.POST:
                 cita.estado = 'cancelada'
-                msg_modal = "❌ Cita cancelada."
+                msg_modal = "Cita cancelada."
             cita.save()
 
     citas_barbero = Cita.objects.filter(id_barbero=barbero_obj).order_by('fecha', 'hora')
@@ -283,10 +343,9 @@ def panel_barbero(request):
 
     todos_los_servicios = Servicio.objects.all()
     ids_servicios_estrella = list(BarberoServicioEstrella.objects.filter(id_barbero=barbero_obj).values_list('id_servicio_id', flat=True))
-    fotos_trabajo = FotoTrabajoBarbero.objects.filter(id_barbero=barbero_obj).order_by('-fecha_subida')
+    fotos_trabajo = FotoTrabajoBarbero.objects.filter(id_barbero=barbero_obj).order_by('-fecha_subida', '-id_foto')
 
     return render(request, 'panel_barbero.html', {
-        "cliente": request.session['cliente_nombre'],
         "citas": citas_barbero,
         "sesion_activa": True,
         "alerta": msg_alerta,
@@ -298,12 +357,30 @@ def panel_barbero(request):
         "barbero_actual": barbero_obj,
     })
 
+
 # =========================================================================
-# 💼 7. PANEL ADMINISTRADOR (¡Con Módulo de Cobros, Caja Real y Cambio de Precios!)
+# 7. PANEL ADMINISTRADOR (cobros, caja real, precios y usuarios)
 # =========================================================================
+MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+
+
+def precio_cita(cita):
+    """Precio guardado dentro de la cita ('Servicio|precio'). Si no lo trae, usa 25000 como antes."""
+    try:
+        partes = cita.observaciones.split('|')
+        if len(partes) > 1:
+            return int(float(partes[1]))
+    except Exception:
+        pass
+    return 25000
+def pesos(valor):
+    """Formato colombiano: 1250000 -> 1.250.000"""
+    return f"{int(valor):,}".replace(",", ".")
+
 @solo_rol('administrador')
 def panel_administrador(request):
-    if 'cliente_nombre' not in request.session: return redirect('login')
+    from collections import Counter
+
     msg_alerta = None
     msg_modal = None
 
@@ -313,7 +390,7 @@ def panel_administrador(request):
             descripcion_nueva = request.POST.get('descripcion_nuevo_servicio')
             precio_nuevo = request.POST.get('precio_nuevo_servicio')
             Servicio.objects.create(nombre_servicio=nombre_nuevo, descripcion=descripcion_nueva, precio=precio_nuevo, estado=1)
-            msg_alerta = f"✨ ¡Servicio '{nombre_nuevo}' agregado con éxito!"
+            msg_alerta = f"¡Servicio '{nombre_nuevo}' agregado con éxito!"
 
         elif 'actualizar_precio' in request.POST:
             id_s = request.POST.get('id_servicio')
@@ -321,43 +398,57 @@ def panel_administrador(request):
             serv = Servicio.objects.get(id_servicio=id_s)
             serv.precio = nuevo_p
             serv.save()
-            msg_alerta = f"💰 ¡Hecho Jefa! La tarifa de '{serv.nombre_servicio}' se actualizó a ${nuevo_p} COP."
+            msg_alerta = f"La tarifa de '{serv.nombre_servicio}' se actualizó a ${nuevo_p} COP."
 
         elif 'eliminar_usuario' in request.POST:
             id_u = request.POST.get('id_usuario')
             u = Usuario.objects.get(id_usuario=id_u)
-            msg_alerta = f"🗑️ El usuario {u.nombre} fue eliminado permanentemente de MySQL."
-            u.delete()
+            if u.correo == request.session.get('cliente_correo'):
+                msg_alerta = "Atención: No puedes eliminar tu propia cuenta mientras estás dentro."
+            else:
+                try:
+                    nombre_borrado = u.nombre
+                    u.delete()
+                    msg_alerta = f"El usuario {nombre_borrado} fue eliminado permanentemente."
+                except Exception:
+                    msg_alerta = "Atención: No se pudo eliminar: este usuario tiene citas o datos asociados."
 
         elif 'id_cita' in request.POST:
             id_c = request.POST.get('id_cita')
             cita = Cita.objects.get(id_cita=id_c)
             if 'aceptar_cita' in request.POST:
                 cita.estado = 'confirmada'
-                msg_modal = "✅ Cita confirmada con éxito."
+                msg_modal = "Cita confirmada con éxito."
             elif 'cancelar_cita' in request.POST:
                 cita.estado = 'cancelada'
-                msg_modal = "❌ Cita cancelada."
+                msg_modal = "Cita cancelada."
             cita.save()
 
         elif 'cambiar_rol' in request.POST:
             id_u = request.POST.get('id_usuario')
             nuevo_rol = request.POST.get('nuevo_rol')
-            usuario = Usuario.objects.get(id_usuario=id_u)
-            usuario.rol = nuevo_rol
-            usuario.save()
-            if nuevo_rol == 'barbero':
-                ficha_existente = Barbero.objects.filter(id_usuario=usuario).exists()
-                if not ficha_existente:
-                    Barbero.objects.create(id_usuario=usuario, especialidad="Por definir", experiencia_anios=0)
-                    msg_alerta = "👤 Rol cambiado a BARBERO. Se creó su ficha automáticamente."
-                else:
-                    msg_alerta = "👤 Rol cambiado a BARBERO."
+            if nuevo_rol not in ROLES_VALIDOS:
+                msg_alerta = "Atención: Rol no válido."
             else:
-                msg_alerta = f"👤 Rol cambiado a {nuevo_rol.upper()}."
+                usuario = Usuario.objects.get(id_usuario=id_u)
+                usuario.rol = nuevo_rol
+                usuario.save()
+                if nuevo_rol == 'barbero':
+                    ficha_existente = Barbero.objects.filter(id_usuario=usuario).exists()
+                    if not ficha_existente:
+                        Barbero.objects.create(id_usuario=usuario, especialidad="Por definir", experiencia_anios=0)
+                        msg_alerta = "Rol cambiado a BARBERO. Se creó su ficha automáticamente."
+                    else:
+                        msg_alerta = "Rol cambiado a BARBERO."
+                else:
+                    msg_alerta = f"Rol cambiado a {nuevo_rol.upper()}."
 
-    # 🧲 Traemos TODAS las citas como lista (no queryset) para poder clasificarlas en Python
-    citas_totales = list(Cita.objects.all().exclude(estado='libre').order_by('fecha', 'hora'))
+    # Traemos TODAS las citas como lista para poder clasificarlas en Python
+    citas_totales = list(
+        Cita.objects.select_related('id_barbero__id_usuario')
+        .exclude(estado='libre')
+        .order_by('fecha', 'hora')
+    )
     usuarios_totales = Usuario.objects.all().order_by('nombre')
     servicios_totales = Servicio.objects.all()
 
@@ -367,22 +458,69 @@ def panel_administrador(request):
         else:
             c.nombre_limpio_servicio = c.observaciones
 
-    # 🗂️ Clasificamos en 4 grupos para las sub-pestañas
+    # Clasificamos en 4 grupos para las sub-pestañas
     citas_pendientes = [c for c in citas_totales if c.estado == 'pendiente' and c.observaciones != 'Horario Disponible']
     citas_confirmadas = [c for c in citas_totales if c.estado == 'confirmada']
     citas_canceladas = [c for c in citas_totales if c.estado == 'cancelada']
     citas_finalizadas = [c for c in citas_totales if c.estado == 'atendida']
 
-    total_caja = 0
-    for cita in citas_finalizadas:
-        try:
-            partes = cita.observaciones.split('|')
-            if len(partes) > 1:
-                total_caja += int(float(partes[1]))
-            else:
-                total_caja += 25000
-        except:
-            total_caja += 25000
+    total_caja = sum(precio_cita(c) for c in citas_finalizadas)
+
+    # ================= DATOS PARA LAS GRÁFICAS =================
+    reales = [c for c in citas_totales if c.observaciones != 'Horario Disponible']
+    activas = [c for c in reales if c.estado != 'cancelada']
+
+    # Ingresos de los últimos 6 meses (con ceros en los meses sin ventas)
+    hoy = datetime.date.today()
+    fin = max([hoy] + [c.fecha for c in citas_finalizadas])
+    meses = []
+    anio, mes = fin.year, fin.month
+    for _ in range(6):
+        meses.append((anio, mes))
+        mes -= 1
+        if mes == 0:
+            mes = 12
+            anio -= 1
+    meses.reverse()
+
+    ingresos_por_mes = {clave: 0 for clave in meses}
+    for c in citas_finalizadas:
+        clave = (c.fecha.year, c.fecha.month)
+        if clave in ingresos_por_mes:
+            ingresos_por_mes[clave] += precio_cita(c)
+
+    servicios_top = Counter(c.nombre_limpio_servicio for c in activas if c.nombre_limpio_servicio).most_common(5)
+    por_barbero = Counter(c.id_barbero.id_usuario.nombre for c in activas).most_common(6)
+
+    ingresos_mes_actual = ingresos_por_mes.get((fin.year, fin.month), 0)
+    ticket_promedio = int(total_caja / len(citas_finalizadas)) if citas_finalizadas else 0
+    tasa_cancelacion = round(len(citas_canceladas) * 100 / len(reales)) if reales else 0
+
+    datos_graficas = {
+        'ingresos': {
+            'etiquetas': [f"{MESES_CORTOS[m - 1]} {a}" for (a, m) in meses],
+            'valores': [ingresos_por_mes[k] for k in meses],
+        },
+        'servicios': {
+            'etiquetas': [s[0] for s in servicios_top],
+            'valores': [s[1] for s in servicios_top],
+        },
+        'estados': {
+            'etiquetas': ['Pendientes', 'Confirmadas', 'Finalizadas', 'Canceladas'],
+            'valores': [len(citas_pendientes), len(citas_confirmadas), len(citas_finalizadas), len(citas_canceladas)],
+        },
+        'barberos': {
+            'etiquetas': [b[0] for b in por_barbero],
+            'valores': [b[1] for b in por_barbero],
+        },
+    }
+
+    resumen = {
+        'ingresos_mes': pesos(ingresos_mes_actual),
+        'ticket': pesos(ticket_promedio),
+        'total_citas': len(reales),
+        'cancelacion': tasa_cancelacion,
+    }
 
     return render(request, 'panel_admin.html', {
         'usuarios': usuarios_totales,
@@ -390,69 +528,72 @@ def panel_administrador(request):
         'sesion_activa': True,
         'alerta': msg_alerta,
         'alerta_modal': msg_modal,
-        'ingresos_totales': f"{total_caja:,}",
+        'ingresos_totales': pesos(total_caja),
         'amount_cobros': len(citas_finalizadas),
         'citas_pendientes': citas_pendientes,
         'citas_confirmadas': citas_confirmadas,
         'citas_canceladas': citas_canceladas,
         'citas_finalizadas': citas_finalizadas,
         'citas_pendientes_admin': len(citas_pendientes),
+        'datos_graficas': datos_graficas,
+        'resumen': resumen,
     })
-
 # =========================================================================
-# 📅 8. FORMULARIO DE AGENDAR CITAS (Coordinado con el ENUM)
+# 8. FORMULARIO DE AGENDAR CITAS
 # =========================================================================
 def agendar_cita(request):
     if 'cliente_correo' not in request.session: return redirect('login')
-    
+
     turnos_disponibles = Cita.objects.filter(observaciones='Horario Disponible', estado='pendiente').order_by('fecha', 'hora')
-    servicios_disponibles = Servicio.objects.all()  # 🎯 CONEXIÓN REAL: traemos los servicios de MySQL
-    barberos_disponibles = Barbero.objects.all()
+
+    contexto = {
+        'turnos': turnos_disponibles,
+        'servicios': Servicio.objects.all(),
+        'barberos_disponibles': Barbero.objects.all(),
+        'servicio_pre': request.GET.get('servicio'),
+        'sesion_activa': True,
+    }
 
     if request.method == 'POST':
         id_turn = request.POST.get('turno_id')
-        ser_elegido = request.POST.get('servicio_elegido') 
-        
+        id_serv = request.POST.get('servicio_elegido')
+
+        servicio_obj = Servicio.objects.filter(id_servicio=id_serv).first() if id_serv else None
+
+        if not servicio_obj:
+            contexto['mensaje_error'] = 'Atención: Elige un servicio válido.'
+            return render(request, 'agendar_cita.html', contexto)
+
         try:
             usuario_cliente = Usuario.objects.get(correo=request.session['cliente_correo'])
-            
-            cita_reservada = Cita.objects.get(id_cita=id_turn)
-            cita_reservada.id_cliente = usuario_cliente
-            cita_reservada.observaciones = ser_elegido  
-            cita_reservada.estado = 'pendiente'         
-            cita_reservada.save()                       
 
-            return render(request, 'agendar_cita.html', {
-                'mensaje': '¡Tu turno ha sido reservado con éxito! El barbero ya sabe qué servicio quieres.', 
-                'turnos': Cita.objects.filter(observaciones='Horario Disponible', estado='pendiente'), 
-                'servicios': Servicio.objects.all(),  # 🎯 también aquí
-                'barberos_disponibles': barberos_disponibles,
-                'sesion_activa': True
-            })
+            # Solo se puede reservar un turno que siga libre
+            cita_reservada = Cita.objects.get(id_cita=id_turn, observaciones='Horario Disponible', estado='pendiente')
+            cita_reservada.id_cliente = usuario_cliente
+            # El precio lo pone el servidor, no el formulario
+            cita_reservada.observaciones = f"{servicio_obj.nombre_servicio}|{int(servicio_obj.precio)}"
+            cita_reservada.estado = 'pendiente'
+            cita_reservada.save()
+
+            contexto['mensaje'] = '¡Tu turno ha sido reservado con éxito! El barbero ya sabe qué servicio quieres.'
+        except Cita.DoesNotExist:
+            contexto['mensaje_error'] = 'Atención: Ese turno ya no está disponible. Elige otro horario.'
         except Exception as e:
-            return render(request, 'agendar_cita.html', {
-                'mensaje_error': f'⚠️ Error al reservar: {e}', 
-                'turnos': turnos_disponibles, 
-                'servicios': servicios_disponibles,  # 🎯 también aquí
-                'barberos_disponibles': barberos_disponibles,
-                'sesion_activa': True
-            })
-            
-    return render(request, 'agendar_cita.html', {
-        'turnos': turnos_disponibles, 
-        'servicios': servicios_disponibles,  # 🎯 y aquí
-        'barberos_disponibles': barberos_disponibles,
-        'sesion_activa': True
-    })
- # =========================================================================
-# 👁️ VER PERFIL PÚBLICO DE UN BARBERO
+            contexto['mensaje_error'] = f'Atención: Error al reservar: {e}'
+
+    # Este return va FUERA del if: así también responde cuando solo se abre la página
+    return render(request, 'agendar_cita.html', contexto)
+
+
+# =========================================================================
+# VER PERFIL PÚBLICO DE UN BARBERO
 # =========================================================================
 def ver_perfil_barbero(request, id_barbero):
     if 'cliente_correo' not in request.session: return redirect('login')
 
-    barbero_obj = Barbero.objects.get(id_barbero=id_barbero)
-    servicios_estrella = BarberoServicioEstrella.objects.filter(id_barbero=barbero_obj)
-    fotos_trabajo = FotoTrabajoBarbero.objects.filter(id_barbero=barbero_obj).order_by('-fecha_subida')
+    barbero_obj = get_object_or_404(Barbero, id_barbero=id_barbero)
+    servicios_estrella = BarberoServicioEstrella.objects.filter(id_barbero=barbero_obj).select_related('id_servicio')
+    fotos_trabajo = FotoTrabajoBarbero.objects.filter(id_barbero=barbero_obj).order_by('-fecha_subida', '-id_foto')
 
     return render(request, 'perfil_barbero_publico.html', {
         'barbero': barbero_obj,
@@ -461,15 +602,198 @@ def ver_perfil_barbero(request, id_barbero):
         'sesion_activa': True
     })
 
+
 # =========================================================================
-# 🎓 9. RUTAS ACADÉMICAS Y DE SALIDA
+# 9. RUTAS ACADÉMICAS Y DE SALIDA
 # =========================================================================
-def acerca_de_sena(request): 
+def acerca_de_sena(request):
     return render(request, 'acerca_de.html', {'sesion_activa': 'cliente_nombre' in request.session})
 
-def pantalla_contacto(request): 
+
+def pantalla_contacto(request):
     return render(request, 'contacto.html', {'sesion_activa': 'cliente_nombre' in request.session})
 
-def cerrar_sesion(request): 
+
+def cerrar_sesion(request):
     request.session.flush()
     return redirect('inicio')
+
+
+
+# =========================================================================
+# 10. ASISTENTE DE ESTILO: recomienda un servicio según las respuestas
+# =========================================================================
+def asistente_estilo(request):
+    import unicodedata
+
+    OPCIONES = {
+        'queres': ('cabello', 'ambos', 'barba'),
+        'cabello': ('liso', 'ondulado', 'rizado', 'poco'),
+        'cara': ('ovalada', 'redonda', 'cuadrada', 'alargada', 'nose'),
+        'mantenimiento': ('bajo', 'medio', 'alto'),
+        'estilo': ('clasico', 'urbano', 'abierto'),
+    }
+
+    ETIQUETAS = {
+        'queres': {'cabello': 'Solo corte', 'ambos': 'Corte y barba', 'barba': 'Solo barba'},
+        'cabello': {'liso': 'Cabello liso', 'ondulado': 'Cabello ondulado', 'rizado': 'Cabello rizado', 'poco': 'Poco cabello'},
+        'cara': {'ovalada': 'Cara ovalada', 'redonda': 'Cara redonda', 'cuadrada': 'Cara cuadrada', 'alargada': 'Cara alargada', 'nose': None},
+        'mantenimiento': {'bajo': 'Mantenimiento bajo', 'medio': 'Mantenimiento medio', 'alto': 'Mantenimiento alto'},
+        'estilo': {'clasico': 'Estilo clásico', 'urbano': 'Estilo urbano', 'abierto': None},
+    }
+
+    contexto = {'sesion_activa': 'cliente_nombre' in request.session}
+
+    # Solo aceptamos respuestas que estén en la lista de opciones válidas
+    respuestas = {}
+    for campo, validos in OPCIONES.items():
+        valor = request.GET.get(campo)
+        if valor in validos:
+            respuestas[campo] = valor
+
+    queres = respuestas.get('queres')
+    requeridas = ['queres', 'mantenimiento']
+    if queres in ('cabello', 'ambos'):
+        requeridas += ['cabello', 'cara', 'estilo']
+
+    # Faltan respuestas: se muestra el cuestionario
+    if not queres or any(c not in respuestas for c in requeridas):
+        return render(request, 'asistente_estilo.html', contexto)
+
+    # ---------------- Sistema de puntos ----------------
+    perfiles = ('clasico', 'fade', 'combo', 'perfilado')
+    puntaje = {p: 0 for p in perfiles}
+    razones = {p: [] for p in perfiles}
+
+    def suma(perfil, puntos, razon=None):
+        puntaje[perfil] += puntos
+        if razon:
+            razones[perfil].append(razon)
+
+    mant = respuestas['mantenimiento']
+
+    if queres == 'barba':
+        for p in ('clasico', 'fade', 'combo'):
+            suma(p, -100)
+        suma('perfilado', 100, 'Solo quieres arreglar la barba: el perfilado deja el contorno definido y prolijo.')
+        suma('perfilado', 0, {
+            'bajo': 'Un buen perfilado mantiene la barba prolija con poco esfuerzo entre visitas.',
+            'medio': 'Con una visita cada tres o cuatro semanas, tu barba se ve siempre cuidada.',
+            'alto': 'Si te gusta verte impecable, repetir el perfilado cada dos semanas mantiene el contorno perfecto.',
+        }[mant])
+    else:
+        suma('perfilado', -100)
+        cabello = respuestas['cabello']
+        cara = respuestas['cara']
+        estilo = respuestas['estilo']
+
+        if cabello == 'liso':
+            suma('clasico', 1, 'Tu cabello liso responde muy bien a los cortes con tijera y peinado definido.')
+            suma('fade', 1, 'En cabello liso, la transición del degradado se ve limpia y precisa.')
+        elif cabello == 'ondulado':
+            suma('clasico', 2, 'Tu cabello ondulado le da textura natural a un corte clásico.')
+            suma('fade', 1)
+        elif cabello == 'rizado':
+            suma('fade', 3, 'Los degradados dan forma y definición al cabello rizado, sin perder el volumen de arriba.')
+            suma('clasico', 1)
+        else:
+            suma('fade', 2, 'Con menos cabello, un degradado bien hecho se ve prolijo y firme.')
+            suma('clasico', 1)
+
+        if cara == 'ovalada':
+            suma('clasico', 1, 'Tu cara ovalada admite casi cualquier estilo, así que puedes elegir por gusto.')
+            suma('fade', 1)
+        elif cara == 'redonda':
+            suma('fade', 2, 'En una cara redonda, los laterales cortos con más volumen arriba estilizan el rostro.')
+        elif cara == 'cuadrada':
+            suma('clasico', 2, 'Tu mandíbula marcada combina con cortes clásicos y bien estructurados.')
+            suma('fade', 1)
+        elif cara == 'alargada':
+            suma('clasico', 2, 'En un rostro alargado conviene no sumar demasiada altura, y el corte clásico lo equilibra.')
+
+        if mant == 'bajo':
+            suma('clasico', 2, 'Un corte clásico aguanta más tiempo entre visitas.')
+            suma('fade', -1)
+        elif mant == 'medio':
+            suma('clasico', 1)
+            suma('fade', 1)
+        else:
+            suma('fade', 2, 'Un degradado se luce más cuando lo mantienes fresco, y tú quieres verte impecable.')
+
+        if estilo == 'clasico':
+            suma('clasico', 3, 'Buscas algo clásico y elegante, justo lo que ofrece este corte.')
+        elif estilo == 'urbano':
+            suma('fade', 3, 'Buscas un estilo moderno y urbano, y el degradado es su sello.')
+
+        if queres == 'ambos':
+            mejor_corte = 'fade' if puntaje['fade'] > puntaje['clasico'] else 'clasico'
+            nombre_corte = 'degradado' if mejor_corte == 'fade' else 'clásico'
+            suma('combo', 100, 'Quieres arreglar cabello y barba a la vez: el combo corte + barba lo resuelve en una sola visita.')
+            suma('combo', 0, f'Para la parte del corte, lo que mejor te va es un estilo {nombre_corte}.')
+            for r in razones[mejor_corte][:2]:
+                suma('combo', 0, r)
+        else:
+            suma('combo', -100)
+
+    # ---------------- De perfil a servicio real ----------------
+    def normalizar(texto):
+        base = unicodedata.normalize('NFD', (texto or '').lower())
+        return ''.join(c for c in base if unicodedata.category(c) != 'Mn')
+
+    servicios = list(Servicio.objects.all())
+    reglas = {
+        'clasico': lambda n: 'clasico' in n and 'barba' not in n,
+        'fade': lambda n: 'fade' in n or 'degrad' in n,
+        'combo': lambda n: 'barba' in n and 'corte' in n,
+        'perfilado': lambda n: 'perfilado' in n,
+    }
+
+    candidatos = []
+    for perfil, cumple in reglas.items():
+        for s in servicios:
+            if cumple(normalizar(s.nombre_servicio)):
+                if puntaje[perfil] > -50:
+                    candidatos.append((puntaje[perfil], perfil, s))
+                break
+
+    candidatos.sort(key=lambda c: c[0], reverse=True)
+
+    # Si los servicios tienen otros nombres, no nos quedamos sin respuesta
+    if not candidatos and servicios:
+        candidatos = [(0, 'clasico', servicios[0])]
+
+    if not candidatos:
+        contexto['sin_resultado'] = True
+        return render(request, 'asistente_estilo.html', contexto)
+
+    _, perfil_principal, servicio_principal = candidatos[0]
+    razones_finales = razones[perfil_principal][:4] or ['Es una excelente opción para conocer nuestro trabajo.']
+
+    alternativa = None
+    for _, _, s in candidatos[1:]:
+        if s.id_servicio != servicio_principal.id_servicio:
+            alternativa = s
+            break
+
+    fotos = (
+        FotoTrabajoBarbero.objects
+        .filter(id_servicio=servicio_principal)
+        .select_related('id_barbero__id_usuario')
+        .order_by('-fecha_subida', '-id_foto')[:3]
+    )
+
+    chips = []
+    for campo in ('queres', 'cabello', 'cara', 'mantenimiento', 'estilo'):
+        if campo in requeridas:
+            etiqueta = ETIQUETAS[campo].get(respuestas[campo])
+            if etiqueta:
+                chips.append(etiqueta)
+
+    contexto['resultado'] = {
+        'principal': servicio_principal,
+        'razones': razones_finales,
+        'alternativa': alternativa,
+        'fotos': fotos,
+        'chips': chips,
+    }
+    return render(request, 'asistente_estilo.html', contexto)

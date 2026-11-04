@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-5gtmhpg+_n^4@y%)t21-s2^f%q55jbs((p(69&pzh3d45w_sil
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.198']
 
 
 # Application definition
@@ -49,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'servicios.middleware.SinCacheEnSesion',
 ]
 
 ROOT_URLCONF = 'barberia.urls'
@@ -135,3 +136,7 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# 🔒 Sesiones: se cierran solas por seguridad
+SESSION_COOKIE_AGE = 1800               # 30 minutos de inactividad
+SESSION_SAVE_EVERY_REQUEST = True       # cada visita renueva el reloj
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # al cerrar el navegador, se cierra la sesión

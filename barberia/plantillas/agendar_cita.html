@@ -79,7 +79,7 @@
                     <div class="paso-label"><span class="paso-num">2</span>Servicio</div>
                     <select name="servicio_elegido" id="selServicio" class="select" required>
                         {% for s in servicios %}
-                            <option value="{{ s.nombre_servicio }}|{{ s.precio|floatformat:'0' }}">{{ s.nombre_servicio }} — ${{ s.precio|floatformat:"0" }} COP</option>
+                            <option value="{{ s.id_servicio }}" data-precio="{{ s.precio|floatformat:'0' }}" {% if servicio_pre == s.id_servicio|stringformat:'d' %}selected{% endif %}>{{ s.nombre_servicio }} — ${{ s.precio|floatformat:"0g" }} COP</option>
                         {% empty %}
                             <option value="">No hay servicios configurados todavía</option>
                         {% endfor %}
@@ -122,7 +122,8 @@
         if (!sel || !salida) { return; }
 
         function pintar() {
-            var precio = sel.value.split('|')[1];
+            var opcion = sel.options[sel.selectedIndex];
+            var precio = opcion ? opcion.dataset.precio : '';
             if (precio) {
                 salida.innerHTML = 'Total a pagar: <strong>$' + Number(precio).toLocaleString('es-CO') + ' COP</strong>';
             } else {

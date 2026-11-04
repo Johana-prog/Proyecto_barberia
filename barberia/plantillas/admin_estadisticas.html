@@ -1,0 +1,225 @@
+{% load static %}
+
+<style>
+    .stats-grid.stats-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .graficas-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .graficas-grid > .card + .card { margin-top: 0; }
+
+    .grafica-box { position: relative; height: 280px; }
+
+    .grafica-vacia {
+        display: grid;
+        place-items: center;
+        height: 280px;
+        padding: 0 20px;
+        color: var(--piedra);
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    @media (max-width: 1100px) { .stats-grid.stats-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 900px) {
+        .stats-grid.stats-4 { grid-template-columns: 1fr; }
+        .graficas-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div id="estadisticas-sec" class="tab-content" style="display: none;">
+
+    <div class="stats-grid stats-4">
+        <div class="stat">
+            <div class="stat-label">Ingresos del mes</div>
+            <div class="stat-valor">${{ resumen.ingresos_mes }} <small>COP</small></div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Ticket promedio</div>
+            <div class="stat-valor">${{ resumen.ticket }} <small>COP</small></div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Citas registradas</div>
+            <div class="stat-valor">{{ resumen.total_citas }}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Tasa de cancelación</div>
+            <div class="stat-valor">{{ resumen.cancelacion }}<small>%</small></div>
+        </div>
+    </div>
+
+    <div class="graficas-grid">
+
+        <div class="card">
+            <div class="card-titulo"><svg class="ico"><use href="#i-banknote"/></svg>Ingresos por mes</div>
+            <p class="card-desc">Citas finalizadas de los últimos 6 meses.</p>
+            <div class="grafica-box" id="box-ingresos"><canvas id="gIngresos"></canvas></div>
+        </div>
+
+        <div class="card">
+            <div class="card-titulo"><svg class="ico"><use href="#i-scissors"/></svg>Servicios más pedidos</div>
+            <p class="card-desc">Sin contar las citas canceladas.</p>
+            <div class="grafica-box" id="box-servicios"><canvas id="gServicios"></canvas></div>
+        </div>
+
+        <div class="card">
+            <div class="card-titulo"><svg class="ico"><use href="#i-calendar-check"/></svg>Citas por estado</div>
+            <p class="card-desc">Cómo van todas las reservas.</p>
+            <div class="grafica-box" id="box-estados"><canvas id="gEstados"></canvas></div>
+        </div>
+
+        <div class="card">
+            <div class="card-titulo"><svg class="ico"><use href="#i-users"/></svg>Citas por barbero</div>
+            <p class="card-desc">Reservas activas de cada barbero.</p>
+            <div class="grafica-box" id="box-barberos"><canvas id="gBarberos"></canvas></div>
+        </div>
+
+    </div>
+</div>
+
+{{ datos_graficas|json_script:"datos-graficas" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+    (function () {
+        var nodo = document.getElementById('datos-graficas');
+        if (!nodo) { return; }
+        var datos = JSON.parse(nodo.textContent);
+
+        var DORADO = '#C9A227', BURDEOS = '#A33333', SALVIA = '#5E8C6A', HUESO = '#F2ECE2';
+
+        function dinero(v) { return '$' + Number(v).toLocaleString('es-CO'); }
+
+        function sinDatos(idBox, texto) {
+            document.getElementById(idBox).innerHTML = '<div class="grafica-vacia">' + texto + '</div>';
+        }
+
+        function hayDatos(valores) {
+            return valores.some(function (v) { return v > 0; });
+        }
+
+        function dibujar() {
+            Chart.defaults.color = '#9A9288';
+            Chart.defaults.font.family = "'Segoe UI', Tahoma, sans-serif";
+            Chart.defaults.borderColor = '#2E2926';
+
+            var sinLeyenda = { legend: { display: false } };
+
+            // 1. Ingresos por mes
+            if (hayDatos(datos.ingresos.valores)) {
+                new Chart(document.getElementById('gIngresos'), {
+                    type: 'bar',
+                    data: {
+                        labels: datos.ingresos.etiquetas,
+                        datasets: [{ data: datos.ingresos.valores, backgroundColor: DORADO, borderRadius: 6, maxBarThickness: 46 }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: function (c) { return ' ' + dinero(c.parsed.y) + ' COP'; } } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { callback: function (v) { return dinero(v); } } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            } else {
+                sinDatos('box-ingresos', 'Aún no hay citas finalizadas para mostrar ingresos.');
+            }
+
+            // 2. Servicios más pedidos
+            if (datos.servicios.valores.length) {
+                new Chart(document.getElementById('gServicios'), {
+                    type: 'bar',
+                    data: {
+                        labels: datos.servicios.etiquetas,
+                        datasets: [{ data: datos.servicios.valores, backgroundColor: BURDEOS, borderRadius: 6, maxBarThickness: 30 }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: sinLeyenda,
+                        scales: {
+                            x: { beginAtZero: true, ticks: { precision: 0 } },
+                            y: { grid: { display: false } }
+                        }
+                    }
+                });
+            } else {
+                sinDatos('box-servicios', 'Aún no hay reservas para mostrar.');
+            }
+
+            // 3. Citas por estado
+            if (hayDatos(datos.estados.valores)) {
+                new Chart(document.getElementById('gEstados'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: datos.estados.etiquetas,
+                        datasets: [{
+                            data: datos.estados.valores,
+                            backgroundColor: [DORADO, SALVIA, HUESO, BURDEOS],
+                            borderColor: '#1D1A18',
+                            borderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '62%',
+                        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16 } } }
+                    }
+                });
+            } else {
+                sinDatos('box-estados', 'Aún no hay citas para mostrar.');
+            }
+
+            // 4. Citas por barbero
+            if (datos.barberos.valores.length) {
+                new Chart(document.getElementById('gBarberos'), {
+                    type: 'bar',
+                    data: {
+                        labels: datos.barberos.etiquetas,
+                        datasets: [{ data: datos.barberos.valores, backgroundColor: SALVIA, borderRadius: 6, maxBarThickness: 46 }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: sinLeyenda,
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0 } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            } else {
+                sinDatos('box-barberos', 'Aún no hay reservas para mostrar.');
+            }
+        }
+
+        // Si el CDN no cargó (sin internet), intenta con la copia local
+        function iniciar() {
+            if (window.Chart) { dibujar(); return; }
+
+            var copia = document.createElement('script');
+            copia.src = "{% static 'js/chart.umd.min.js' %}";
+            copia.onload = dibujar;
+            copia.onerror = function () {
+                document.querySelectorAll('.grafica-box').forEach(function (caja) {
+                    caja.innerHTML = '<div class="grafica-vacia">No se pudo cargar la librería de gráficas. Revisa tu conexión a internet.</div>';
+                });
+            };
+            document.head.appendChild(copia);
+        }
+
+        iniciar();
+
+        // Si llegas con la dirección /dashboard-admin/#estadisticas-sec, abre la pestaña
+        window.addEventListener('DOMContentLoaded', function () {
+            if (window.location.hash === '#estadisticas-sec' && typeof abrirPestana === 'function') {
+                abrirPestana('estadisticas-sec', 'btn-estadisticas');
+            }
+        });
+    })();
+</script>

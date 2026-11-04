@@ -15,7 +15,20 @@
 
     <div class="hero-contenido-flotante">
         <img src="{% static 'imagenes/logo.png' %}" alt="Usme Barber Top" class="logo-flotante">
-        <a href="/login/" class="btn-dorado">Reservar mi cita</a>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+            {% if usuario_sesion.rol == 'cliente' %}
+                <a href="/agendar/" class="btn-dorado">Reservar mi cita</a>
+            {% elif usuario_sesion.rol == 'barbero' %}
+                <a href="/panel-barbero/" class="btn-dorado">Ir a mi panel</a>
+            {% elif usuario_sesion.rol == 'administrador' %}
+                <a href="/dashboard-admin/" class="btn-dorado">Ir a mi panel</a>
+            {% else %}
+                <a href="/login/" class="btn-dorado">Reservar mi cita</a>
+            {% endif %}
+
+            <a href="/asistente/" class="btn btn-borde" style="height: 48px; padding: 0 26px; background: rgba(20, 18, 17, 0.55);">¿Qué corte me queda?</a>
+        </div>
     </div>
 </div>
 
@@ -25,10 +38,10 @@
     <div class="grid-servicios">
         {% for s in servicios %}
             <div class="tarjeta-servicio">
-            <h3>{{ s.nombre_servicio }}</h3>
-            <p class="descripcion-servicio">{{ s.descripcion|default:"Servicio profesional de barbería." }}</p>
-            <p class="precio-servicio">${{ s.precio|floatformat:"0" }} COP</p>
-</div>
+                <h3>{{ s.nombre_servicio }}</h3>
+                <p class="descripcion-servicio">{{ s.descripcion|default:"Servicio profesional de barbería." }}</p>
+                <p class="precio-servicio">${{ s.precio|floatformat:"0g" }} COP</p>
+            </div>
         {% empty %}
             <p style="color: #8A8580;">Muy pronto publicaremos nuestros servicios aquí.</p>
         {% endfor %}

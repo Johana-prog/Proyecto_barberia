@@ -4,31 +4,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usme Barber Top</title>
+    <title>{% block titulo %}Usme Barber Top{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C9A227' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='24' height='24' rx='5' fill='%23141211' stroke='none'/%3E%3Cg transform='translate(3 3) scale(.75)'%3E%3Ccircle cx='6' cy='6' r='3'/%3E%3Cpath d='M8.12 8.12 12 12'/%3E%3Cpath d='M20 4 8.12 15.88'/%3E%3Ccircle cx='6' cy='18' r='3'/%3E%3Cpath d='M14.8 14.8 20 20'/%3E%3C/g%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=3">
-    <link rel="stylesheet" href="{% static 'css/panel.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'css/panel.css' %}?v=7">
+    <style>
+        .nav-marca-flex { display: inline-flex; align-items: center; gap: 10px; }
+        .ico-nav {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: var(--dorado);
+            stroke-width: 1.7;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .nav-links .btn { height: 36px; }
+    </style>
 </head>
 <body>
 
-    {% if not sesion_activa %}
+    <!-- Barra pública: se adapta a si hay sesión abierta o no.
+         En las pantallas con menú lateral se oculta sola (ver panel.css). -->
     <div class="nav">
         <div class="nav-marca">
-            <a href="/inicio/" class="nav-marca-texto">💈 USME BARBER TOP ✂️</a>
+            <a href="/inicio/" class="nav-marca-texto nav-marca-flex">
+                <svg class="ico-nav" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>
+                USME BARBER TOP
+            </a>
         </div>
         <div class="nav-links">
-            <a href="/login/">👤 INICIAR SESIÓN</a>
+            {% if usuario_sesion %}
+                <a href="{% if usuario_sesion.rol == 'administrador' %}/dashboard-admin/{% elif usuario_sesion.rol == 'barbero' %}/panel-barbero/{% else %}/panel-cliente/{% endif %}" class="btn btn-borde btn-sm">Mi panel</a>
+                <a href="/cerrar/">Cerrar sesión</a>
+            {% else %}
+                <a href="/login/" class="btn btn-borde btn-sm">Iniciar sesión</a>
+            {% endif %}
         </div>
     </div>
     <div class="sub-nav">
         <a href="/inicio/#servicios">Servicios</a>
         <span class="sub-nav-separador">|</span>
-        <a href="/galeria/">Galería de Fotos</a>
+        <a href="/galeria/">Estilos de corte</a>
+        <span class="sub-nav-separador">|</span>
+        <a href="/asistente/">Asistente de estilo</a>
         <span class="sub-nav-separador">|</span>
         <a href="/contacto-info/">Contacto</a>
     </div>
-    {% endif %}
 
     <div class="body-container">
         {% block contenido %}

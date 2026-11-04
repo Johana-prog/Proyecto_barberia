@@ -14,9 +14,11 @@
         <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
         <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></symbol>
         <symbol id="i-back" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+        <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
+        <symbol id="i-spark" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></symbol>
     </svg>
 
-    <!-- ✂️ Marca con tijera animada -->
+    <!-- Marca con tijera animada -->
     <div class="sb-marca" id="sbMarca">
         <span class="sb-marca-icono">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -27,7 +29,7 @@
         <span class="sb-texto sb-marca-texto">USME BARBER TOP</span>
     </div>
 
-    <!-- 🧑 Usuario -->
+    <!-- Usuario -->
     <div class="sb-usuario">
         {% if usuario_sesion.foto %}
             <img class="sb-avatar" src="{{ usuario_sesion.foto.url }}" alt="">
@@ -40,7 +42,7 @@
         </div>
     </div>
 
-    <!-- 🧭 Opciones -->
+    <!-- Opciones -->
     <div class="sb-menu">
 
         {% if request.path != '/panel-cliente/' and request.path != '/panel-barbero/' and request.path != '/dashboard-admin/' %}
@@ -57,6 +59,12 @@
             <a href="/agendar/" class="nav-item" data-path="/agendar/" data-default="1">
                 <svg class="ico"><use href="#i-scissors"/></svg><span class="sb-texto">Solicitar Turno</span>
             </a>
+            <a href="/galeria/" class="nav-item" data-path="/galeria/" data-default="1">
+                <svg class="ico"><use href="#i-image"/></svg><span class="sb-texto">Estilos de Corte</span>
+            </a>
+            <a href="/asistente/" class="nav-item" data-path="/asistente/" data-default="1">
+                <svg class="ico"><use href="#i-spark"/></svg><span class="sb-texto">Asistente de Estilo</span>
+            </a>
 
         {% elif usuario_sesion.rol == 'barbero' %}
             <a href="/panel-barbero/#agenda-sec" id="btn-agenda" class="nav-item b-tab-btn" data-path="/panel-barbero/" data-hash="#agenda-sec" data-default="1" onclick="return cambiarPestanaLateral('agenda-sec','btn-agenda')">
@@ -72,7 +80,7 @@
                 <svg class="ico"><use href="#i-user-plus"/></svg><span class="sb-texto">Registrar Usuario</span>
             </a>
 
-        {% elif usuario_sesion.rol == 'administrador' %}
+            {% elif usuario_sesion.rol == 'administrador' %}
             <a href="/dashboard-admin/#citas-sec" id="btn-citas" class="nav-item tab-btn" data-path="/dashboard-admin/" data-hash="#citas-sec" data-default="1" onclick="return cambiarPestanaLateral('citas-sec','btn-citas')">
                 <svg class="ico"><use href="#i-calendar"/></svg><span class="sb-texto">Gestión de Citas</span>
             </a>
@@ -81,6 +89,9 @@
             </a>
             <a href="/dashboard-admin/#servicios-sec" id="btn-servicios" class="nav-item tab-btn" data-path="/dashboard-admin/" data-hash="#servicios-sec" onclick="return cambiarPestanaLateral('servicios-sec','btn-servicios')">
                 <svg class="ico"><use href="#i-banknote"/></svg><span class="sb-texto">Tarifas y Servicios</span>
+            </a>
+            <a href="/dashboard-admin/#estadisticas-sec" id="btn-estadisticas" class="nav-item tab-btn" data-path="/dashboard-admin/" data-hash="#estadisticas-sec" onclick="return cambiarPestanaLateral('estadisticas-sec','btn-estadisticas')">
+                <svg class="ico"><use href="#i-chart"/></svg><span class="sb-texto">Estadísticas</span>
             </a>
             <a href="/registro/" class="nav-item" data-path="/registro/">
                 <svg class="ico"><use href="#i-user-plus"/></svg><span class="sb-texto">Registrar Usuario</span>
@@ -99,6 +110,7 @@
     </div>
 </nav>
 </aside>
+{% include 'menu_movil.html' %}
 
 <script>
     (function () {

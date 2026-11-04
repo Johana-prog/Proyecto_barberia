@@ -1,52 +1,201 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block contenido %}
-<div style="max-width: 850px; margin: 40px auto; padding: 20px; font-family: sans-serif;">
-    
-    <!-- Encabezado Llamativo -->
-    <div style="text-align: center; margin-bottom: 40px;">
-        <h2 style="color: rgb(201, 39, 39); font-size: 2.2rem; margin: 0; letter-spacing: 1px;">📞 CENTRAL DE CONTACTO Y UBICACIÓN</h2>
-        <p style="color: #aaa; margin-top: 10px; font-size: 1.05rem;">Conéctate con la barbería urbana más pro de Medellín.</p>
-    </div>
+<style>
+    .contacto-pagina { max-width: 1000px; margin: 0 auto; padding: 48px 6% 70px; }
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-        
-        <!-- Tarjeta 1: Información de Canales -->
-        <div style="background-color: #1a1a1a; padding: 30px; border-radius: 8px; border-top: 4px solid rgb(201, 39, 39); box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-            <h3 style="color: #fff; margin-top: 0; margin-bottom: 20px; font-size: 1.3rem;">🚨 SOPORTE DIRECTO</h3>
-            
-            <div style="margin-bottom: 20px;">
-                <span style="color: rgb(201, 39, 39); font-weight: bold; display: block; font-size: 0.9rem;">📞 LÍNEA TELEFÓNICA:</span>
-                <span style="color: #fff; font-size: 1.1rem; font-weight: bold;">+57 323 6214485</span>
+    .contacto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+    .contacto-grid .card + .card { margin-top: 0; }
+
+    .canal { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 22px; }
+    .canal:last-of-type { margin-bottom: 0; }
+
+    .canal-icono {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        border-radius: var(--radio);
+        color: var(--dorado);
+        background: var(--dorado-suave);
+        border: 1px solid rgba(201, 162, 39, 0.4);
+    }
+
+    .canal-icono .ico { width: 20px; height: 20px; }
+
+    .canal-label {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--piedra);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+    }
+
+    .canal-valor { color: var(--hueso); font-size: 1.05rem; font-weight: 700; }
+    a.canal-valor:hover { color: var(--dorado); }
+
+    .canal-texto { color: var(--hueso); font-size: 0.92rem; line-height: 1.7; }
+
+    .contacto-acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
+
+    /* Mapa estilizado */
+    .mapa {
+        position: relative;
+        height: 190px;
+        margin: 6px 0 20px;
+        border-radius: 12px;
+        border: 1px solid var(--borde);
+        background-color: var(--carbon);
+        background-image:
+            linear-gradient(var(--borde) 1px, transparent 1px),
+            linear-gradient(90deg, var(--borde) 1px, transparent 1px);
+        background-size: 26px 26px;
+        overflow: hidden;
+    }
+
+    .mapa::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, transparent 30%, rgba(20, 18, 17, 0.85) 100%);
+    }
+
+    .mapa-pin {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: 2;
+        width: 44px;
+        height: 44px;
+        margin: -30px 0 0 -22px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        color: #1A1715;
+        background: var(--dorado);
+    }
+
+    .mapa-pin .ico { width: 22px; height: 22px; stroke-width: 2; }
+
+    .mapa-pin::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 2px solid var(--dorado);
+        animation: latido 2s ease-out infinite;
+    }
+
+    @keyframes latido {
+        0%   { transform: scale(1); opacity: 0.9; }
+        100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    .mapa-etiqueta {
+        position: absolute;
+        left: 50%;
+        bottom: 16px;
+        z-index: 2;
+        transform: translateX(-50%);
+        padding: 6px 14px;
+        border-radius: var(--radio);
+        background: rgba(20, 18, 17, 0.88);
+        border: 1px solid var(--borde-fuerte);
+        color: var(--hueso);
+        font-size: 0.78rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .sede-texto { color: var(--piedra); font-size: 0.9rem; margin-bottom: 4px; }
+
+    @media (max-width: 760px) {
+        .contacto-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .mapa-pin::before { animation: none; }
+    }
+</style>
+
+<!-- Íconos de esta pantalla -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></symbol>
+</svg>
+
+{% if usuario_sesion %}<div class="panel-layout">{% include 'menu_lateral.html' %}<main class="panel-main">{% endif %}
+
+<div class="contacto-pagina">
+
+    <header class="panel-header">
+        <div class="panel-eyebrow">Contacto</div>
+        <h1 class="panel-titulo">Contacto y ubicación</h1>
+        <p class="panel-subtitulo">Conéctate con la barbería urbana más pro de Medellín.</p>
+    </header>
+
+    <div class="contacto-grid">
+
+        <!-- Canales de contacto -->
+        <div class="card">
+            <div class="card-titulo">Soporte directo</div>
+            <p class="card-desc">Escríbenos o llámanos, con gusto te atendemos.</p>
+
+            <div class="canal">
+                <span class="canal-icono"><svg class="ico"><use href="#i-phone"/></svg></span>
+                <div>
+                    <span class="canal-label">Línea telefónica</span>
+                    <a href="tel:+573236214485" class="canal-valor">+57 323 6214485</a>
+                </div>
             </div>
 
-            <div style="margin-bottom: 20px;">
-                <span style="color: rgb(201, 39, 39); font-weight: bold; display: block; font-size: 0.9rem;">✉️ CORREO CORPORATIVO:</span>
-                <span style="color: #fff; font-size: 1rem;">soporte@usmebarbertop.com</span>
+            <div class="canal">
+                <span class="canal-icono"><svg class="ico"><use href="#i-mail"/></svg></span>
+                <div>
+                    <span class="canal-label">Correo corporativo</span>
+                    <a href="mailto:soporte@usmebarbertop.com" class="canal-valor" style="font-size: 0.98rem;">soporte@usmebarbertop.com</a>
+                </div>
             </div>
 
-            <div>
-                <span style="color: rgb(201, 39, 39); font-weight: bold; display: block; font-size: 0.9rem;">⏳ HORARIO DE OPERACIÓN:</span>
-                <span style="color: #aaa; font-size: 0.9rem; line-height: 1.5;">Lunes a Sábado: 8:00 AM - 8:00 PM<br>Domingos y Festivos: 9:00 AM - 4:00 PM</span>
+            <div class="canal">
+                <span class="canal-icono"><svg class="ico"><use href="#i-clock"/></svg></span>
+                <div>
+                    <span class="canal-label">Horario de operación</span>
+                    <span class="canal-texto">Lunes a sábado: 8:00 AM - 8:00 PM<br>Domingos y festivos: 9:00 AM - 4:00 PM</span>
+                </div>
+            </div>
+
+            <div class="contacto-acciones">
+                <a href="tel:+573236214485" class="btn btn-primario"><svg class="ico"><use href="#i-phone"/></svg>Llamar ahora</a>
+                <a href="mailto:soporte@usmebarbertop.com" class="btn btn-borde"><svg class="ico"><use href="#i-mail"/></svg>Escribir</a>
             </div>
         </div>
 
-        <!-- Tarjeta 2: Mapa Urbano Interactivo Premium -->
-        <div style="background-color: #1a1a1a; padding: 30px; border-radius: 8px; border-top: 4px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <h3 style="color: #fff; margin-top: 0; margin-bottom: 10px; font-size: 1.3rem;">📍 NUESTRA UBICACIÓN</h3>
-                <p style="color: #aaa; margin: 0 0 20px 0; font-size: 0.95rem;">Sede Principal: El Poblado, Medellín, Colombia.</p>
+        <!-- Ubicación -->
+        <div class="card">
+            <div class="card-titulo">Nuestra ubicación</div>
+            <p class="sede-texto">Sede principal: El Poblado, Medellín, Colombia.</p>
+
+            <div class="mapa">
+                <span class="mapa-pin"><svg class="ico"><use href="#i-pin"/></svg></span>
+                <span class="mapa-etiqueta">Usme Barber Sede Medellín</span>
             </div>
-            
-            <!-- Simulador de Mapa de Figma de alta fidelidad -->
-            <div style="width: 100%; height: 160px; background-color: #111; border-radius: 6px; border: 1px solid #333; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden;">
-                <!-- Rejilla de calles estética urbana -->
-                <div style="position: absolute; width: 100%; height: 100%; background-image: linear-gradient(#222 1px, transparent 1px), linear-gradient(90deg, #222 1px, transparent 1px); background-size: 20px 20px; opacity: 0.5;"></div>
-                <span style="font-size: 2.2rem; z-index: 5; animation: pulse 2s infinite;">📍</span>
-                <span style="color: #fff; font-weight: bold; font-size: 0.85rem; margin-top: 5px; z-index: 5; background-color: rgba(0,0,0,0.7); padding: 2px 8px; border-radius: 4px;">Usme Barber Sede Medellín</span>
-            </div>
+
+            <a href="https://www.google.com/maps/search/?api=1&query=El+Poblado+Medell%C3%ADn+Colombia" target="_blank" rel="noopener" class="btn btn-borde btn-block">
+                <svg class="ico"><use href="#i-external"/></svg>Cómo llegar
+            </a>
         </div>
 
     </div>
 </div>
+
+{% if usuario_sesion %}</main></div>{% endif %}
 {% endblock %}

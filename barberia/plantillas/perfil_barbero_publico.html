@@ -1,56 +1,208 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block contenido %}
-<div style="display: flex; width: 100%; min-height: calc(100vh - 60px);">
+<style>
+    .perfil-pub { max-width: 1000px; }
 
+    .barbero-cabecera { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+
+    .barbero-foto {
+        width: 124px;
+        height: 124px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--dorado);
+        flex-shrink: 0;
+    }
+
+    .barbero-foto-vacia {
+        display: grid;
+        place-items: center;
+        background: var(--superficie-2);
+        color: var(--dorado);
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 3.6rem;
+    }
+
+    .barbero-datos h1 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 2.6rem;
+        letter-spacing: 1.5px;
+        line-height: 1;
+        color: var(--hueso);
+    }
+
+    .barbero-especialidad { margin-top: 8px; color: var(--dorado); font-weight: 700; font-size: 0.95rem; }
+
+    .barbero-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+        color: var(--piedra);
+        font-size: 0.85rem;
+    }
+
+    .barbero-meta .ico { width: 16px; height: 16px; color: var(--dorado); }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+
+    .tag-estrella {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 16px;
+        border-radius: var(--radio);
+        border: 1px solid rgba(201, 162, 39, 0.45);
+        background: var(--dorado-suave);
+        color: var(--dorado);
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .tag-estrella .ico { width: 15px; height: 15px; fill: currentColor; stroke-width: 1; }
+
+    .trabajos { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; margin-top: 16px; }
+
+    .trabajo {
+        position: relative;
+        aspect-ratio: 4 / 5;
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--carbon);
+        border: 1px solid var(--borde);
+        cursor: zoom-in;
+    }
+
+    .trabajo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
+    .trabajo:hover img { transform: scale(1.05); }
+
+    .trabajo-pie {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 26px 12px 10px;
+        background: linear-gradient(180deg, transparent, rgba(20, 18, 17, 0.94));
+        pointer-events: none;
+    }
+
+    .trabajo-pie strong { display: block; color: var(--hueso); font-size: 0.86rem; }
+    .trabajo-pie span { color: var(--dorado); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+
+    .visor {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(10, 8, 7, 0.92);
+        cursor: zoom-out;
+    }
+
+    .visor img { max-width: 90vw; max-height: 88vh; border-radius: 12px; }
+
+    .volver-link { display: inline-block; margin-bottom: 18px; color: var(--piedra); font-size: 0.82rem; }
+</style>
+
+<div class="panel-layout">
     {% include 'menu_lateral.html' %}
 
-    <div style="flex: 1; padding: 40px;">
-        <div style="max-width: 800px; margin: 0 auto;">
+    <main class="panel-main">
+    <div class="panel-contenido perfil-pub">
 
-            <a href="javascript:history.back()" style="color: #888; text-decoration: none; font-size: 0.85rem; display: inline-block; margin-bottom: 20px;">← Volver</a>
+        <a href="/galeria/" class="volver-link" onclick="if (history.length > 1) { history.back(); return false; }">← Volver</a>
 
-            <!-- 🧑 Encabezado del barbero -->
-            <div style="background-color: #1a1a1a; padding: 30px; border-radius: 10px; border-top: 3px solid rgb(201, 39, 39); display: flex; align-items: center; gap: 25px; margin-bottom: 25px;">
+        <!-- Cabecera -->
+        <div class="card">
+            <div class="barbero-cabecera">
                 {% if barbero.id_usuario.foto %}
-                    <img src="{{ barbero.id_usuario.foto.url }}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid rgb(201, 39, 39);">
+                    <img class="barbero-foto" src="{{ barbero.id_usuario.foto.url }}" alt="{{ barbero.id_usuario.nombre }}">
                 {% else %}
-                    <div style="width: 100px; height: 100px; border-radius: 50%; background-color: #222; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; border: 3px solid #333;">💈</div>
+                    <span class="barbero-foto barbero-foto-vacia">{{ barbero.id_usuario.nombre|first|upper }}</span>
                 {% endif %}
-                <div>
-                    <h2 style="color: #fff; margin: 0 0 6px 0; font-size: 1.6rem;">{{ barbero.id_usuario.nombre }} {{ barbero.id_usuario.apellido }}</h2>
-                    <p style="color: rgb(201, 39, 39); font-weight: bold; margin: 0 0 4px 0; font-size: 0.95rem;">✂️ {{ barbero.especialidad|default:"Barbero profesional" }}</p>
-                    <p style="color: #888; margin: 0; font-size: 0.85rem;">🎖️ {{ barbero.experiencia_anios|default:"0" }} años de experiencia</p>
+
+                <div class="barbero-datos">
+                    <div class="panel-eyebrow">Tu barbero</div>
+                    <h1>{{ barbero.id_usuario.nombre }} {{ barbero.id_usuario.apellido }}</h1>
+                    <div class="barbero-especialidad">{{ barbero.especialidad|default:"Barbero profesional" }}</div>
+                    {% if barbero.experiencia_anios %}
+                        <div class="barbero-meta">
+                            <svg class="ico"><use href="#i-scissors"/></svg>
+                            {{ barbero.experiencia_anios }} año{{ barbero.experiencia_anios|pluralize }} de experiencia
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 
-            <!-- 🌟 Servicios estrella -->
-            <div style="background-color: #1a1a1a; padding: 25px; border-radius: 10px; margin-bottom: 25px;">
-                <h3 style="color: #fff; margin-top: 0; margin-bottom: 15px; font-size: 1.1rem;">🌟 Especialidades</h3>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                    {% for est in servicios_estrella %}
-                        <span style="background-color: rgba(241, 196, 15, 0.15); color: #f1c40f; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(241, 196, 15, 0.3);">
-                            ⭐ {{ est.id_servicio.nombre_servicio }}
-                        </span>
-                    {% empty %}
-                        <p style="color: #556; font-size: 0.9rem; margin: 0;">Este barbero aún no ha marcado sus especialidades.</p>
-                    {% endfor %}
+            {% if usuario_sesion.rol == 'cliente' %}
+                <div class="acciones" style="margin-top: 22px;">
+                    <a href="/agendar/" class="btn btn-primario"><svg class="ico"><use href="#i-scissors"/></svg>Solicitar turno</a>
+                    <a href="/galeria/" class="btn btn-borde">Ver todos los estilos</a>
                 </div>
-            </div>
-
-            <!-- 🖼️ Galería de trabajos -->
-            <div style="background-color: #1a1a1a; padding: 25px; border-radius: 10px;">
-                <h3 style="color: #fff; margin-top: 0; margin-bottom: 15px; font-size: 1.1rem;">🖼️ Trabajos Recientes</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px;">
-                    {% for f in fotos_trabajo %}
-                        <img src="{{ f.imagen.url }}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
-                    {% empty %}
-                        <p style="color: #556; font-size: 0.9rem; grid-column: 1 / -1;">📭 Este barbero todavía no ha subido fotos de sus trabajos.</p>
-                    {% endfor %}
-                </div>
-            </div>
-
+            {% endif %}
         </div>
+
+        <!-- Servicios estrella -->
+        <div class="card">
+            <div class="card-titulo"><svg class="ico"><use href="#i-scissors"/></svg>En qué se destaca</div>
+            <div class="tags">
+                {% for est in servicios_estrella %}
+                    <span class="tag-estrella">
+                        <svg class="ico" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        {{ est.id_servicio.nombre_servicio }}
+                    </span>
+                {% empty %}
+                    <p class="card-desc" style="margin: 0;">Este barbero aún no ha marcado sus especialidades.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Portafolio -->
+        <div class="card">
+            <div class="card-titulo"><svg class="ico"><use href="#i-image"/></svg>Trabajos recientes</div>
+            <div class="trabajos">
+                {% for f in fotos_trabajo %}
+                    <div class="trabajo">
+                        <img src="{{ f.imagen.url }}" alt="{{ f.nombre_estilo|default:'Trabajo de barbería' }}" loading="lazy">
+                        {% if f.nombre_estilo or f.id_servicio %}
+                            <div class="trabajo-pie">
+                                {% if f.nombre_estilo %}<strong>{{ f.nombre_estilo }}</strong>{% endif %}
+                                {% if f.id_servicio %}<span>{{ f.id_servicio.nombre_servicio }}</span>{% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <div class="vacio" style="grid-column: 1 / -1;">Este barbero todavía no ha publicado trabajos.</div>
+                {% endfor %}
+            </div>
+        </div>
+
     </div>
+    </main>
 </div>
+
+<div id="visor" class="visor"><img id="visorImg" alt=""></div>
+
+<script>
+    (function () {
+        var visor = document.getElementById('visor');
+        var imgGrande = document.getElementById('visorImg');
+
+        document.querySelectorAll('.trabajo img').forEach(function (img) {
+            img.addEventListener('click', function () {
+                imgGrande.src = img.src;
+                visor.style.display = 'flex';
+            });
+        });
+
+        visor.addEventListener('click', function () { visor.style.display = 'none'; });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { visor.style.display = 'none'; }
+        });
+    })();
+</script>
 {% endblock %}

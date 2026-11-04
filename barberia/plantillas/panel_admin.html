@@ -15,7 +15,7 @@
         </header>
 
         {% if alerta %}
-            <div class="alerta alerta-ok">{{ alerta }}</div>
+            <div class="alerta {% if 'Atención' in alerta %}alerta-error{% else %}alerta-ok{% endif %}">{{ alerta }}</div>
         {% endif %}
 
         {% if citas_pendientes_admin > 0 %}
@@ -176,7 +176,7 @@
                 </div>
             </div>
         </div>
-
+        {% include 'admin_estadisticas.html' %}
         <!-- ================= TARIFAS Y SERVICIOS ================= -->
         <div id="servicios-sec" class="tab-content" style="display: none;">
 
@@ -212,7 +212,7 @@
                         {% for s in servicios %}
                             <tr>
                                 <td>{{ s.nombre_servicio }}</td>
-                                <td class="precio">${{ s.precio|floatformat:"0" }} COP</td>
+                                <td class="precio">${{ s.precio|floatformat:"0g" }} COP</td>
                                 <td>
                                     <div class="acciones centro">
                                         <form method="POST">

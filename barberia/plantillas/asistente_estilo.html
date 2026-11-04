@@ -1,0 +1,422 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block contenido %}
+<style>
+    .asist-pagina { max-width: 800px; margin: 0 auto; padding: 48px 6% 70px; }
+
+    /* ---- Progreso ---- */
+    .asist-progreso { height: 6px; background: var(--borde); border-radius: 6px; overflow: hidden; }
+
+    .asist-barra {
+        height: 100%;
+        width: 20%;
+        background: var(--dorado);
+        border-radius: 6px;
+        transition: width 0.35s ease;
+    }
+
+    .asist-progreso-texto {
+        margin: 10px 0 26px;
+        color: var(--piedra);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+    }
+
+    /* ---- Preguntas ---- */
+    .asist-paso { display: none; }
+    .asist-paso.activo { display: block; animation: asistEntrar 0.35s ease; }
+
+    @keyframes asistEntrar {
+        from { opacity: 0; transform: translateX(14px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .asist-pregunta {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 2.1rem;
+        letter-spacing: 1.2px;
+        line-height: 1.1;
+        color: var(--hueso);
+        margin-bottom: 20px;
+    }
+
+    .asist-opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+
+    .asist-opcion { position: relative; display: block; cursor: pointer; }
+    .asist-opcion input { position: absolute; opacity: 0; pointer-events: none; }
+
+    .asist-tarjeta {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 18px 50px 18px 20px;
+        background: var(--superficie);
+        border: 1px solid var(--borde);
+        border-radius: 12px;
+        transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    }
+
+    .asist-tarjeta strong { color: var(--hueso); font-size: 1rem; }
+    .asist-tarjeta small { color: var(--piedra); font-size: 0.82rem; line-height: 1.4; }
+
+    .asist-tarjeta::after {
+        content: '';
+        position: absolute;
+        right: 18px;
+        top: 50%;
+        width: 18px;
+        height: 18px;
+        margin-top: -9px;
+        border-radius: 50%;
+        border: 2px solid var(--borde-fuerte);
+        transition: border-color 0.2s, background 0.2s;
+    }
+
+    .asist-opcion:hover .asist-tarjeta { border-color: var(--borde-fuerte); transform: translateY(-2px); }
+
+    .asist-opcion input:checked + .asist-tarjeta { border-color: var(--dorado); background: var(--dorado-suave); }
+
+    .asist-opcion input:checked + .asist-tarjeta::after {
+        border-color: var(--dorado);
+        background: radial-gradient(circle, var(--dorado) 45%, transparent 50%);
+    }
+
+    .asist-opcion input:focus-visible + .asist-tarjeta { outline: 2px solid var(--dorado); outline-offset: 2px; }
+
+    .asist-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 26px; }
+
+    /* ---- Resultado ---- */
+    .res-principal { border-top: 3px solid var(--dorado); animation: asistEntrar 0.5s ease; }
+
+    .res-etiqueta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--dorado);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .res-etiqueta .ico { width: 16px; height: 16px; }
+
+    .res-titulo {
+        margin-top: 10px;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 3.2rem;
+        letter-spacing: 1.5px;
+        line-height: 1;
+        color: var(--hueso);
+    }
+
+    .res-precio { margin: 8px 0 10px; color: var(--dorado); font-weight: 700; font-size: 1.35rem; }
+    .res-desc { color: var(--piedra); font-size: 0.92rem; line-height: 1.6; }
+
+    .chips-resp { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 22px; }
+
+    .chip-resp {
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--borde-fuerte);
+        color: var(--piedra);
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+    }
+
+    .razones-titulo {
+        margin-bottom: 12px;
+        color: var(--hueso);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+    }
+
+    .razones { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 26px; }
+
+    .razones li {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        color: var(--hueso);
+        font-size: 0.92rem;
+        line-height: 1.55;
+    }
+
+    .razones .ico { width: 18px; height: 18px; margin-top: 2px; color: var(--dorado); stroke-width: 2.2; }
+
+    .res-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin-top: 16px; }
+
+    .res-foto {
+        position: relative;
+        aspect-ratio: 4 / 5;
+        overflow: hidden;
+        border-radius: 12px;
+        border: 1px solid var(--borde);
+        background: var(--carbon);
+    }
+
+    .res-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .res-foto span {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 24px 10px 8px;
+        background: linear-gradient(180deg, transparent, rgba(20, 18, 17, 0.94));
+        color: var(--hueso);
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+
+    .res-alt { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .res-alt h3 { color: var(--hueso); font-size: 1.1rem; }
+    .res-alt p { color: var(--piedra); font-size: 0.85rem; margin-top: 4px; }
+    .res-alt .precio { color: var(--dorado); font-weight: 700; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .asist-paso.activo, .res-principal { animation: none; }
+    }
+</style>
+
+<!-- Íconos de esta pantalla -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="as-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="as-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+    <symbol id="as-calendar" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></symbol>
+    <symbol id="as-spark" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></symbol>
+    <symbol id="as-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></symbol>
+</svg>
+
+{% if usuario_sesion %}<div class="panel-layout">{% include 'menu_lateral.html' %}<main class="panel-main">{% endif %}
+
+<div class="asist-pagina">
+
+    <header class="panel-header">
+        <div class="panel-eyebrow">Asistente de estilo</div>
+        {% if resultado %}
+            <h1 class="panel-titulo">Tu corte ideal</h1>
+            <p class="panel-subtitulo">Según tus respuestas, esto es lo que mejor te va.</p>
+        {% else %}
+            <h1 class="panel-titulo">¿Qué corte te queda?</h1>
+            <p class="panel-subtitulo">Responde unas preguntas rápidas y te recomendamos el servicio ideal para ti.</p>
+        {% endif %}
+    </header>
+
+    {% if resultado %}
+
+        <!-- ================= RESULTADO ================= -->
+        <div class="card res-principal">
+            <span class="res-etiqueta"><svg class="ico"><use href="#as-spark"/></svg>Tu recomendación</span>
+            <h2 class="res-titulo">{{ resultado.principal.nombre_servicio }}</h2>
+            <p class="res-precio">${{ resultado.principal.precio|floatformat:"0g" }} COP</p>
+            <p class="res-desc">{{ resultado.principal.descripcion|default:"" }}</p>
+
+            {% if resultado.chips %}
+                <div class="chips-resp">
+                    {% for c in resultado.chips %}<span class="chip-resp">{{ c }}</span>{% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="razones-titulo">Por qué te lo recomendamos</div>
+            <ul class="razones">
+                {% for r in resultado.razones %}
+                    <li><svg class="ico"><use href="#as-check"/></svg><span>{{ r }}</span></li>
+                {% endfor %}
+            </ul>
+
+            <div class="acciones">
+                {% if usuario_sesion.rol == 'cliente' %}
+                    <a href="/agendar/?servicio={{ resultado.principal.id_servicio }}" class="btn btn-primario">
+                        <svg class="ico"><use href="#as-scissors"/></svg>Reservar este servicio
+                    </a>
+                {% elif not usuario_sesion %}
+                    <a href="/login/" class="btn btn-primario">
+                        <svg class="ico"><use href="#as-scissors"/></svg>Inicia sesión para reservar
+                    </a>
+                {% endif %}
+                <a href="/galeria/?servicio={{ resultado.principal.id_servicio }}" class="btn btn-borde">Ver estilos de este servicio</a>
+                <a href="/asistente/" class="btn btn-borde">Repetir el test</a>
+            </div>
+        </div>
+
+        {% if resultado.fotos %}
+            <div class="card">
+                <div class="card-titulo">Así se ve este estilo</div>
+                <p class="card-desc">Trabajos reales de nuestros barberos.</p>
+                <div class="res-fotos">
+                    {% for f in resultado.fotos %}
+                        <div class="res-foto">
+                            <img src="{{ f.imagen.url }}" alt="{{ f.nombre_estilo|default:'Trabajo de barbería' }}" loading="lazy">
+                            <span>{{ f.nombre_estilo|default:"Corte a medida" }} · {{ f.id_barbero.id_usuario.nombre }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if resultado.alternativa %}
+            <div class="card">
+                <div class="res-alt">
+                    <div>
+                        <div class="panel-eyebrow">También podría gustarte</div>
+                        <h3>{{ resultado.alternativa.nombre_servicio }}</h3>
+                        <p><span class="precio">${{ resultado.alternativa.precio|floatformat:"0g" }} COP</span>{% if resultado.alternativa.descripcion %} · {{ resultado.alternativa.descripcion }}{% endif %}</p>
+                    </div>
+                    <a href="/galeria/?servicio={{ resultado.alternativa.id_servicio }}" class="btn btn-borde btn-sm">Ver estilos</a>
+                </div>
+            </div>
+        {% endif %}
+
+    {% elif sin_resultado %}
+
+        <div class="card">
+            <div class="vacio">Todavía no hay servicios configurados para recomendarte.<br>Vuelve más tarde.</div>
+        </div>
+
+    {% else %}
+
+        <!-- ================= CUESTIONARIO ================= -->
+        <form method="GET" action="/asistente/" id="formAsistente">
+
+            <div class="asist-progreso"><div class="asist-barra" id="asistBarra"></div></div>
+            <div class="asist-progreso-texto" id="asistTexto">Pregunta 1 de 5</div>
+
+            <section class="asist-paso activo">
+                <h2 class="asist-pregunta">¿Qué te quieres hacer hoy?</h2>
+                <div class="asist-opciones">
+                    <label class="asist-opcion"><input type="radio" name="queres" value="cabello"><span class="asist-tarjeta"><strong>Solo el corte</strong><small>Cabello, sin tocar la barba</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="queres" value="ambos"><span class="asist-tarjeta"><strong>Corte y barba</strong><small>Cabello y barba en la misma visita</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="queres" value="barba"><span class="asist-tarjeta"><strong>Solo la barba</strong><small>Arreglo y contorno de barba</small></span></label>
+                </div>
+            </section>
+
+            <section class="asist-paso" data-solo="cabello,ambos">
+                <h2 class="asist-pregunta">¿Cómo es tu cabello?</h2>
+                <div class="asist-opciones">
+                    <label class="asist-opcion"><input type="radio" name="cabello" value="liso"><span class="asist-tarjeta"><strong>Liso</strong><small>Cae recto y suave</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="cabello" value="ondulado"><span class="asist-tarjeta"><strong>Ondulado</strong><small>Con algo de movimiento</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="cabello" value="rizado"><span class="asist-tarjeta"><strong>Rizado o afro</strong><small>Con volumen y textura</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="cabello" value="poco"><span class="asist-tarjeta"><strong>Poco cabello</strong><small>Corto o con entradas</small></span></label>
+                </div>
+            </section>
+
+            <section class="asist-paso" data-solo="cabello,ambos">
+                <h2 class="asist-pregunta">¿Qué forma tiene tu cara?</h2>
+                <div class="asist-opciones">
+                    <label class="asist-opcion"><input type="radio" name="cara" value="ovalada"><span class="asist-tarjeta"><strong>Ovalada</strong><small>Proporcionada, un poco más larga que ancha</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="cara" value="redonda"><span class="asist-tarjeta"><strong>Redonda</strong><small>Mejillas llenas, ancho y largo parecidos</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="cara" value="cuadrada"><span class="asist-tarjeta"><strong>Cuadrada</strong><small>Mandíbula marcada y frente ancha</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="cara" value="alargada"><span class="asist-tarjeta"><strong>Alargada</strong><small>Mucho más larga que ancha</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="cara" value="nose"><span class="asist-tarjeta"><strong>No estoy seguro</strong><small>Que el asistente decida</small></span></label>
+                </div>
+            </section>
+
+            <section class="asist-paso">
+                <h2 class="asist-pregunta">¿Cuánto mantenimiento quieres?</h2>
+                <div class="asist-opciones">
+                    <label class="asist-opcion"><input type="radio" name="mantenimiento" value="bajo"><span class="asist-tarjeta"><strong>Lo mínimo</strong><small>Voy cada 5 o 6 semanas</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="mantenimiento" value="medio"><span class="asist-tarjeta"><strong>Normal</strong><small>Voy cada 3 o 4 semanas</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="mantenimiento" value="alto"><span class="asist-tarjeta"><strong>Siempre impecable</strong><small>Voy cada 2 semanas</small></span></label>
+                </div>
+            </section>
+
+            <section class="asist-paso" data-solo="cabello,ambos">
+                <h2 class="asist-pregunta">¿Qué estilo buscas?</h2>
+                <div class="asist-opciones">
+                    <label class="asist-opcion"><input type="radio" name="estilo" value="clasico"><span class="asist-tarjeta"><strong>Clásico y elegante</strong><small>Atemporal, siempre bien peinado</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="estilo" value="urbano"><span class="asist-tarjeta"><strong>Moderno y urbano</strong><small>Degradados y líneas marcadas</small></span></label>
+                    <label class="asist-opcion"><input type="radio" name="estilo" value="abierto"><span class="asist-tarjeta"><strong>Sorpréndeme</strong><small>Que el asistente decida</small></span></label>
+                </div>
+            </section>
+
+            <div class="asist-nav">
+                <button type="button" class="btn btn-borde" id="asistAtras" style="visibility: hidden;">
+                    <svg class="ico"><use href="#as-left"/></svg>Atrás
+                </button>
+                <button type="submit" class="btn btn-primario" id="asistVer" style="display: none;">
+                    <svg class="ico"><use href="#as-spark"/></svg>Ver mi recomendación
+                </button>
+            </div>
+
+        </form>
+
+        <script>
+            (function () {
+                var form = document.getElementById('formAsistente');
+                if (!form) { return; }
+
+                var todos = Array.prototype.slice.call(form.querySelectorAll('.asist-paso'));
+                var barra = document.getElementById('asistBarra');
+                var texto = document.getElementById('asistTexto');
+                var btnAtras = document.getElementById('asistAtras');
+                var btnVer = document.getElementById('asistVer');
+                var actual = 0;
+
+                function queres() {
+                    var marcado = form.querySelector('input[name="queres"]:checked');
+                    return marcado ? marcado.value : null;
+                }
+
+                // Si elige "solo barba", se saltan las preguntas del cabello y de la cara
+                function visibles() {
+                    var q = queres();
+                    return todos.filter(function (p) {
+                        var solo = p.getAttribute('data-solo');
+                        if (!solo || q === null) { return true; }
+                        return solo.split(',').indexOf(q) !== -1;
+                    });
+                }
+
+                function pintar() {
+                    var lista = visibles();
+                    if (actual > lista.length - 1) { actual = lista.length - 1; }
+
+                    todos.forEach(function (p) { p.classList.remove('activo'); });
+                    var paso = lista[actual];
+                    paso.classList.add('activo');
+
+                    barra.style.width = ((actual + 1) / lista.length * 100) + '%';
+                    texto.textContent = 'Pregunta ' + (actual + 1) + ' de ' + lista.length;
+                    btnAtras.style.visibility = actual === 0 ? 'hidden' : 'visible';
+
+                    var respondida = paso.querySelector('input:checked') !== null;
+                    btnVer.style.display = (actual === lista.length - 1 && respondida) ? 'inline-flex' : 'none';
+                }
+
+                // Al elegir una opción, pasa solo a la siguiente pregunta
+                form.addEventListener('click', function (e) {
+                    var el = e.target;
+                    if (!el || el.type !== 'radio') { return; }
+
+                    if (actual < visibles().length - 1) {
+                        setTimeout(function () {
+                            actual = Math.min(actual + 1, visibles().length - 1);
+                            pintar();
+                        }, 260);
+                    } else {
+                        pintar();
+                    }
+                });
+
+                btnAtras.addEventListener('click', function () {
+                    if (actual > 0) { actual -= 1; pintar(); }
+                });
+
+                pintar();
+            })();
+        </script>
+
+    {% endif %}
+
+</div>
+
+{% if usuario_sesion %}</main></div>{% endif %}
+{% endblock %}

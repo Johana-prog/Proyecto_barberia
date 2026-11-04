@@ -2,42 +2,101 @@
 {% load static %}
 
 {% block contenido %}
-<!-- 🎨 Cargamos tus estilos personalizados en la posición correcta -->
-<link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+<style>
+    .acerca-pagina { max-width: 760px; margin: 0 auto; padding: 48px 6% 70px; }
 
-<div style="max-width: 650px; margin: 40px auto; background-color: #1a1a1a; padding: 35px; border-radius: 8px; border-top: 4px solid rgb(201, 39, 39); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); font-family: sans-serif; text-align: center;">
-    
-    <!-- 💈 Título de la Marca -->
-    <h2 style="color: rgb(201, 39, 39); font-size: 2rem; margin-bottom: 20px; letter-spacing: 0.5px;">💈 Usme Barber Top</h2>
-    
-    <!-- 📄 Tu Misión de Calidad -->
-    <p style="color: #fff; font-size: 1.1rem; line-height: 1.6; margin-bottom: 25px; text-align: justify;">
-        Somos una barbería enfocada en brindar un servicio de calidad, 
-        permitiendo a nuestros clientes agendar sus citas de manera 
-        rápida y sencilla a través de nuestro sistema web.
-    </p>
-    
-    <p style="color: #ccc; font-size: 1.1rem; line-height: 1.6; margin-bottom: 35px; text-align: justify;">
-        Nuestro objetivo es mejorar la organización de las citas 
-        y ofrecer una mejor experiencia tanto para clientes como 
-        para barberos.
-    </p>
+    .marca-bloque { text-align: center; }
 
-    <!-- 🌟 Línea divisoria decorativa urbana -->
-    <hr style="border: 0; height: 1px; background: #333; margin: 25px 0;">
+    .marca-bloque h2 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 2.4rem;
+        letter-spacing: 2px;
+        color: var(--hueso);
+    }
 
-    <!-- 🟢 SECCIÓN SENA: Bloque Académico Formal -->
-    <div style="background-color: #111; padding: 20px; border-radius: 6px; border: 1px solid #222; display: flex; flex-direction: column; align-items: center; gap: 12px;">
-        
-        <!-- 🎯 LOGO DEL SENA CORREGIDO: Jalamos tu imagen local sin fondo desde la carpeta static -->
-        <!-- 💡 NOTA: Si tu archivo se llama diferente (ej: sena.png), cámbiale solo el nombre dentro de las comillas simples -->
-        <img src="{% static 'imagenes/sena.png' %}" alt="Logo SENA" style="max-width: 80px; height: auto; filter: drop-shadow(0px 0px 4px rgba(255,255,255,0.1));">
-        
-        <h4 style="color: rgb(201, 39, 39); margin: 5px 0 0 0; font-size: 1.2rem; letter-spacing: 0.5px;">Proyecto Académico Desarrollado para el SENA</h4>
-        
-        <p style="color: #fff; margin: 0; font-size: 1.05rem; font-weight: bold;">Programa: ADSO</p>
-        <p style="color: #aaa; margin: 0; font-size: 0.95rem;">Tecnólogo en Análisis y Desarrollo de Software</p>
-        <p style="color: rgb(201, 39, 39); margin: 5px 0 0 0; font-size: 0.9rem; font-weight: bold; letter-spacing: 0.5px;">Sistema de gestión de citas para barbería</p>
+    .texto-mision {
+        color: var(--hueso);
+        font-size: 1.02rem;
+        line-height: 1.75;
+        margin-bottom: 16px;
+    }
+
+    .texto-mision:last-child { margin-bottom: 0; color: var(--piedra); }
+
+    .sena-bloque {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .sena-logo {
+        width: 86px;
+        height: auto;
+        flex-shrink: 0;
+    }
+
+    .sena-datos h3 {
+        margin: 4px 0 10px;
+        color: var(--hueso);
+        font-size: 1.15rem;
+        line-height: 1.3;
+    }
+
+    .sena-linea { color: var(--piedra); font-size: 0.9rem; line-height: 1.7; }
+    .sena-linea strong { color: var(--hueso); }
+
+    .sena-sistema {
+        margin-top: 8px;
+        color: var(--dorado);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+    }
+
+    @media (max-width: 560px) {
+        .sena-bloque { flex-direction: column; text-align: center; }
+    }
+</style>
+
+{% if usuario_sesion %}<div class="panel-layout">{% include 'menu_lateral.html' %}<main class="panel-main">{% endif %}
+
+<div class="acerca-pagina">
+
+    <header class="panel-header marca-bloque">
+        <div class="panel-eyebrow">Quiénes somos</div>
+        <h2>Usme Barber Top</h2>
+        <div class="linea-dorada centrada"></div>
+    </header>
+
+    <div class="card">
+        <p class="texto-mision">
+            Somos una barbería enfocada en brindar un servicio de calidad,
+            permitiendo a nuestros clientes agendar sus citas de manera
+            rápida y sencilla a través de nuestro sistema web.
+        </p>
+        <p class="texto-mision">
+            Nuestro objetivo es mejorar la organización de las citas
+            y ofrecer una mejor experiencia tanto para clientes como
+            para barberos.
+        </p>
     </div>
+
+    <div class="card">
+        <div class="sena-bloque">
+            <img src="{% static 'imagenes/sena.png' %}" alt="Logo SENA" class="sena-logo">
+            <div class="sena-datos">
+                <div class="panel-eyebrow">Proyecto académico</div>
+                <h3>Desarrollado para el SENA</h3>
+                <div class="sena-linea"><strong>Programa:</strong> ADSO</div>
+                <div class="sena-linea">Tecnólogo en Análisis y Desarrollo de Software</div>
+                <div class="sena-sistema">Sistema de gestión de citas para barbería</div>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+{% if usuario_sesion %}</main></div>{% endif %}
 {% endblock %}

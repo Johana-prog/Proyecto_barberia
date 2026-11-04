@@ -232,11 +232,12 @@ class FotoTrabajoBarbero(models.Model):
     id_barbero = models.ForeignKey(Barbero, models.CASCADE, db_column='id_barbero')
     imagen = models.ImageField(upload_to='trabajos_barberos/')
     fecha_subida = models.DateField(blank=True, null=True, auto_now_add=True)
+    nombre_estilo = models.CharField(max_length=80, blank=True, null=True)
+    id_servicio = models.ForeignKey('Servicio', models.SET_NULL, db_column='id_servicio', blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'foto_trabajo_barbero'
-
 
 class Usuario(models.Model):
     id_usuario = models.AutoField(primary_key=True)

@@ -768,3 +768,149 @@
 .input:autofill:focus {
     border-color: var(--dorado);
 }
+
+/* ============================================================
+   🧭 Las pantallas con menú lateral no necesitan la barra pública
+   ============================================================ */
+body:has(.panel-layout) .nav,
+body:has(.panel-layout) .sub-nav {
+    display: none;
+}
+
+/* Avisos de error (los mensajes que empiezan con "Atención:") */
+.alerta-error {
+    background: rgba(140, 42, 42, 0.18);
+    border-color: rgba(163, 51, 51, 0.55);
+    color: #E3A0A0;
+}
+
+/* ============================================================
+   VERSIÓN PARA CELULAR Y TABLET
+   ============================================================ */
+
+/* En computador estos elementos no se ven */
+.m-topbar,
+.m-backdrop { display: none; }
+
+@media (max-width: 900px) {
+
+    /* El menú pasa a ser un cajón que entra desde la izquierda */
+    .rail { width: 0; min-width: 0; }
+
+    .sidebar,
+    .sidebar:hover,
+    .sidebar.abierto {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: min(var(--ancho-menu), 86vw);
+        height: 100vh;
+        height: 100dvh;
+        overflow-y: auto;
+        transform: translateX(-102%);
+        box-shadow: none;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sidebar.abierto {
+        transform: none;
+        box-shadow: 14px 0 40px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Dentro del cajón el texto siempre se ve */
+    .sb-texto { opacity: 1; transform: none; }
+
+    /* Fondo oscuro detrás del cajón */
+    .m-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 39;
+        background: rgba(10, 8, 7, 0.65);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    body:has(.sidebar.abierto) .m-backdrop { opacity: 1; pointer-events: auto; }
+    body:has(.sidebar.abierto) { overflow: hidden; }
+
+    /* Barra superior fija con el botón de menú */
+    .m-topbar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 58px;
+        padding: 0 16px;
+        z-index: 35;
+        background: rgba(24, 21, 19, 0.96);
+        backdrop-filter: blur(6px);
+        border-bottom: 1px solid var(--borde);
+    }
+
+    .m-menu-btn {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: var(--radio);
+        border: 1px solid var(--borde-fuerte);
+        background: transparent;
+        color: var(--hueso);
+        cursor: pointer;
+    }
+
+    .m-menu-btn .ico { width: 22px; height: 22px; }
+
+    .m-topbar-titulo {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.25rem;
+        letter-spacing: 1.5px;
+        color: var(--hueso);
+    }
+
+    /* El contenido ocupa todo el ancho y deja espacio para la barra */
+    .panel-main { padding: 78px 18px 50px; }
+
+    .panel-main .estilos-pagina,
+    .panel-main .contacto-pagina,
+    .panel-main .acerca-pagina,
+    .panel-main .asist-pagina { padding: 0 0 40px; }
+}
+
+@media (max-width: 600px) {
+    .card { padding: 18px; }
+    .panel-titulo { font-size: 1.9rem; }
+    .stat-valor { font-size: 2.1rem; }
+
+    .tabla th { padding: 0 8px 10px; }
+    .tabla td { padding: 10px 8px; }
+
+    /* 16px evita que el iPhone haga zoom solo al tocar un campo */
+    .input, .select, .input-sm { font-size: 16px; }
+
+    .modal-caja { max-width: calc(100vw - 40px); padding: 28px 24px; }
+    .aviso { flex-wrap: wrap; }
+
+    /* Barra pública */
+    .nav { padding: 14px 4%; }
+    .nav-marca-texto { font-size: 1.3rem; }
+    .sub-nav { flex-wrap: wrap; row-gap: 8px; column-gap: 18px; padding: 10px 4%; }
+    .sub-nav-separador { display: none; }
+    .pie .pie-interno { justify-content: center; text-align: center; }
+}
+
+/* Pantallas táctiles: botones más fáciles de tocar */
+@media (pointer: coarse) {
+    .btn-sm { height: 40px; }
+    .input-sm { height: 40px; }
+    .sub-tab-btn { height: 42px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar, .sidebar:hover, .sidebar.abierto, .m-backdrop { transition: none; }
+}

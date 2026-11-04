@@ -15,7 +15,7 @@
         </header>
 
         {% if alerta %}
-            <div class="alerta alerta-ok">{{ alerta }}</div>
+            <div class="alerta {% if 'Atención' in alerta %}alerta-error{% else %}alerta-ok{% endif %}">{{ alerta }}</div>
         {% endif %}
 
         {% if citas_pendientes_count > 0 %}
@@ -119,30 +119,52 @@
             </div>
 
             <div class="card">
-                <div class="card-titulo"><svg class="ico"><use href="#i-image"/></svg>Agregar foto a mi galería</div>
-                <form method="POST" enctype="multipart/form-data" class="fila-form" style="margin-top: 14px;">
+                <div class="card-titulo"><svg class="ico"><use href="#i-image"/></svg>Agregar estilo al catálogo</div>
+                <p class="card-desc">Ponle nombre al estilo y elige su servicio. Así el cliente puede reservarlo directo desde el catálogo.</p>
+                <form method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
-                    <input type="file" name="foto_trabajo" accept="image/*" required class="input input-file" style="flex: 1; min-width: 220px;">
-                    <button type="submit" name="subir_foto" class="btn btn-primario" style="height: 42px;"><svg class="ico"><use href="#i-scissors"/></svg>Subir foto</button>
+                    <div class="campo">
+                        <label>Foto (máximo 5 MB)</label>
+                        <input type="file" name="foto_trabajo" accept="image/*" required class="input input-file">
+                    </div>
+                    <div class="fila-form" style="margin-bottom: 18px;">
+                        <div class="campo" style="flex: 2; min-width: 200px;">
+                            <label>Nombre del estilo</label>
+                            <input type="text" name="nombre_estilo" class="input" maxlength="80" placeholder="Ej: Fade bajo con barba">
+                        </div>
+                        <div class="campo" style="flex: 1; min-width: 180px;">
+                            <label>Servicio</label>
+                            <select name="servicio_foto" class="select">
+                                <option value="">Sin servicio</option>
+                                {% for s in servicios %}
+                                    <option value="{{ s.id_servicio }}">{{ s.nombre_servicio }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" name="subir_foto" class="btn btn-primario"><svg class="ico"><use href="#i-scissors"/></svg>Subir al catálogo</button>
                 </form>
             </div>
 
             <div class="card">
-                <div class="card-titulo"><svg class="ico"><use href="#i-image"/></svg>Galería de mis trabajos</div>
+                <div class="card-titulo"><svg class="ico"><use href="#i-image"/></svg>Mis estilos publicados</div>
                 <div class="galeria" style="margin-top: 16px;">
                     {% for f in fotos_trabajo %}
                         <div class="foto-item">
-                            <img src="{{ f.imagen.url }}" alt="Trabajo de barbería">
+                            <img src="{{ f.imagen.url }}" alt="{{ f.nombre_estilo|default:'Trabajo de barbería' }}">
+                            <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 10px 8px; background: linear-gradient(180deg, transparent, rgba(20, 18, 17, 0.92)); font-size: 0.78rem; font-weight: 600; color: var(--hueso);">
+                                {{ f.nombre_estilo|default:"Sin nombre" }}
+                            </div>
                             <form method="POST">
                                 {% csrf_token %}
                                 <input type="hidden" name="id_foto" value="{{ f.id_foto }}">
-                                <button type="submit" name="eliminar_foto" class="btn-icono" title="Eliminar foto" onclick="return confirm('¿Eliminar esta foto de tu portafolio?');">
+                                <button type="submit" name="eliminar_foto" class="btn-icono" title="Eliminar" onclick="return confirm('¿Eliminar esta foto de tu portafolio?');">
                                     <svg class="ico" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                                 </button>
                             </form>
                         </div>
                     {% empty %}
-                        <div class="vacio" style="grid-column: 1 / -1;">Aún no has subido fotos de tus trabajos.</div>
+                        <div class="vacio" style="grid-column: 1 / -1;">Aún no has publicado estilos.</div>
                     {% endfor %}
                 </div>
             </div>
