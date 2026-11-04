@@ -11,21 +11,29 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv  # ✅ Nuevo: para leer tu cajita secreta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# ✅ Cargamos la cajita con secretos (el archivo .env)
+load_dotenv()
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-5gtmhpg+_n^4@y%)t21-s2^f%q55jbs((p(69&pzh3d45w_sil'
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]  # ✅ Ya no está escrita aquí
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False") == "True"  # ✅ También desde la cajita
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.198']
+ALLOWED_HOSTS = os.environ.get(
+    "ALLOWED_HOSTS", 
+    "localhost,127.0.0.1,192.168.1.198"
+).split(",")  # ✅ Tus direcciones se quedan
 
 
 # Application definition
@@ -57,10 +65,11 @@ ROOT_URLCONF = 'barberia.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['C:/Users/HP/Desktop/Proyecto_barbershop/barberia/barberia/plantillas'],
+        'DIRS': [BASE_DIR / 'barberia' / 'plantillas'],  # ✅ ¡Sin tu nombre de usuario! Funciona en cualquier PC
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -79,11 +88,11 @@ WSGI_APPLICATION = 'barberia.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'gestorbarberia', # 👈 Cambia esto por el nombre real de tu BD en Workbench
-        'USER': 'root',                        # 👈 Tu usuario de Workbench (suele ser root)
-        'PASSWORD': 'Sena1234',           # 👈 Coloca aquí la clave con la que entras a Workbench
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'NAME': os.environ["DB_NAME"],      # ✅ Desde la cajita
+        'USER': os.environ["DB_USER"],      # ✅ Desde la cajita
+        'PASSWORD': os.environ["DB_PASSWORD"],  # ✅ Desde la cajita
+        'HOST': os.environ["DB_HOST"],      # ✅ Desde la cajita
+        'PORT': os.environ["DB_PORT"],      # ✅ Desde la cajita
     }
 }
 
@@ -97,6 +106,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 8},  # ✅ Mínimo 8 letras
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -110,9 +120,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-co'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Bogota'  # ✅ Hora de Colombia, no de otro país
 
 USE_I18N = True
 
@@ -122,21 +132,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-import os
-
 STATIC_URL = 'static/'
 
-# Esta línea le enseña a Django a salir de la carpeta 'barberia' para buscar el diseño afuera
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    BASE_DIR / 'static',  # ✅ Igualito que tenías
 ]
-
 
 # 🖼️ Configuración para guardar y mostrar fotos de perfil
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / 'media'  # ✅ Igualito que tenías
 
 # 🔒 Sesiones: se cierran solas por seguridad
-SESSION_COOKIE_AGE = 1800               # 30 minutos de inactividad
-SESSION_SAVE_EVERY_REQUEST = True       # cada visita renueva el reloj
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # al cerrar el navegador, se cierra la sesión
+SESSION_COOKIE_AGE = 1800              # ✅ 30 minutos de inactividad — se queda
+SESSION_SAVE_EVERY_REQUEST = True      # ✅ cada visita renueva el reloj — se queda
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True # ✅ al cerrar el navegador, se cierra — se queda
