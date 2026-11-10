@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block titulo %}Asistente de estilo - Usme Barber Top{% endblock %}
+
 {% block contenido %}
 <style>
     .asist-pagina { max-width: 800px; margin: 0 auto; padding: 48px 6% 70px; }
@@ -19,7 +21,7 @@
     .asist-progreso-texto {
         margin: 10px 0 26px;
         color: var(--piedra);
-        font-size: 0.78rem;
+        font-size: 0.8rem;
         font-weight: 700;
         letter-spacing: 1.4px;
         text-transform: uppercase;
@@ -35,13 +37,17 @@
     }
 
     .asist-pregunta {
+        margin-bottom: 8px;
         font-family: 'Bebas Neue', sans-serif;
         font-size: 2.1rem;
         letter-spacing: 1.2px;
         line-height: 1.1;
         color: var(--hueso);
-        margin-bottom: 20px;
     }
+
+    .asist-pregunta:focus { outline: none; }
+
+    .asist-pista { margin: 0 0 20px; color: var(--piedra); font-size: 0.9rem; line-height: 1.5; }
 
     .asist-opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
 
@@ -61,7 +67,7 @@
     }
 
     .asist-tarjeta strong { color: var(--hueso); font-size: 1rem; }
-    .asist-tarjeta small { color: var(--piedra); font-size: 0.82rem; line-height: 1.4; }
+    .asist-tarjeta small { color: var(--piedra); font-size: 0.85rem; line-height: 1.4; }
 
     .asist-tarjeta::after {
         content: '';
@@ -88,6 +94,7 @@
     .asist-opcion input:focus-visible + .asist-tarjeta { outline: 2px solid var(--dorado); outline-offset: 2px; }
 
     .asist-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 26px; }
+    .asist-nav .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
     /* ---- Resultado ---- */
     .res-principal { border-top: 3px solid var(--dorado); animation: asistEntrar 0.5s ease; }
@@ -97,7 +104,7 @@
         align-items: center;
         gap: 8px;
         color: var(--dorado);
-        font-size: 0.72rem;
+        font-size: 0.76rem;
         font-weight: 700;
         letter-spacing: 2px;
         text-transform: uppercase;
@@ -124,7 +131,7 @@
         border-radius: 6px;
         border: 1px solid var(--borde-fuerte);
         color: var(--piedra);
-        font-size: 0.74rem;
+        font-size: 0.78rem;
         font-weight: 700;
         letter-spacing: 0.4px;
     }
@@ -132,13 +139,13 @@
     .razones-titulo {
         margin-bottom: 12px;
         color: var(--hueso);
-        font-size: 0.8rem;
+        font-size: 0.82rem;
         font-weight: 700;
         letter-spacing: 1.4px;
         text-transform: uppercase;
     }
 
-    .razones { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 26px; }
+    .razones { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
 
     .razones li {
         display: flex;
@@ -151,16 +158,24 @@
 
     .razones .ico { width: 18px; height: 18px; margin-top: 2px; color: var(--dorado); stroke-width: 2.2; }
 
+    .res-nota { margin-bottom: 22px; color: var(--piedra); font-size: 0.85rem; line-height: 1.5; }
+
+    .res-copiado { color: var(--piedra); font-size: 0.85rem; }
+
     .res-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin-top: 16px; }
 
     .res-foto {
         position: relative;
+        display: block;
         aspect-ratio: 4 / 5;
         overflow: hidden;
         border-radius: 12px;
         border: 1px solid var(--borde);
         background: var(--carbon);
     }
+
+    a.res-foto:hover { border-color: var(--dorado); }
+    a.res-foto:focus-visible { outline: 2px solid var(--dorado); outline-offset: 2px; }
 
     .res-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
@@ -172,7 +187,7 @@
         padding: 24px 10px 8px;
         background: linear-gradient(180deg, transparent, rgba(20, 18, 17, 0.94));
         color: var(--hueso);
-        font-size: 0.78rem;
+        font-size: 0.8rem;
         font-weight: 600;
     }
 
@@ -183,6 +198,8 @@
 
     @media (prefers-reduced-motion: reduce) {
         .asist-paso.activo, .res-principal { animation: none; }
+        .asist-barra, .asist-tarjeta { transition: none; }
+        .asist-opcion:hover .asist-tarjeta { transform: none; }
     }
 </style>
 
@@ -190,6 +207,7 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="as-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
     <symbol id="as-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+    <symbol id="as-right" viewBox="0 0 24 24"><path d="m12 5 7 7-7 7"/><path d="M5 12h14"/></symbol>
     <symbol id="as-calendar" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></symbol>
     <symbol id="as-spark" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></symbol>
     <symbol id="as-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></symbol>
@@ -214,7 +232,7 @@
 
         <!-- ================= RESULTADO ================= -->
         <div class="card res-principal">
-            <span class="res-etiqueta"><svg class="ico"><use href="#as-spark"/></svg>Tu recomendación</span>
+            <span class="res-etiqueta"><svg class="ico" aria-hidden="true"><use href="#as-spark"/></svg>Tu recomendación</span>
             <h2 class="res-titulo">{{ resultado.principal.nombre_servicio }}</h2>
             <p class="res-precio">${{ resultado.principal.precio|floatformat:"0g" }} COP</p>
             <p class="res-desc">{{ resultado.principal.descripcion|default:"" }}</p>
@@ -228,22 +246,26 @@
             <div class="razones-titulo">Por qué te lo recomendamos</div>
             <ul class="razones">
                 {% for r in resultado.razones %}
-                    <li><svg class="ico"><use href="#as-check"/></svg><span>{{ r }}</span></li>
+                    <li><svg class="ico" aria-hidden="true"><use href="#as-check"/></svg><span>{{ r }}</span></li>
                 {% endfor %}
             </ul>
+
+            <p class="res-nota">Es una sugerencia orientativa. Tu barbero puede ajustar el corte a tu cabello y a lo que prefieras.</p>
 
             <div class="acciones">
                 {% if usuario_sesion.rol == 'cliente' %}
                     <a href="/agendar/?servicio={{ resultado.principal.id_servicio }}" class="btn btn-primario">
-                        <svg class="ico"><use href="#as-scissors"/></svg>Reservar este servicio
+                        <svg class="ico" aria-hidden="true"><use href="#as-calendar"/></svg>Reservar este servicio
                     </a>
                 {% elif not usuario_sesion %}
                     <a href="/login/" class="btn btn-primario">
-                        <svg class="ico"><use href="#as-scissors"/></svg>Inicia sesión para reservar
+                        <svg class="ico" aria-hidden="true"><use href="#as-scissors"/></svg>Inicia sesión para reservar
                     </a>
                 {% endif %}
                 <a href="/galeria/?servicio={{ resultado.principal.id_servicio }}" class="btn btn-borde">Ver estilos de este servicio</a>
                 <a href="/asistente/" class="btn btn-borde">Repetir el test</a>
+                <button type="button" class="btn btn-borde" id="btnCopiar">Copiar enlace</button>
+                <span class="res-copiado" id="copiado" role="status" aria-live="polite"></span>
             </div>
         </div>
 
@@ -253,10 +275,10 @@
                 <p class="card-desc">Trabajos reales de nuestros barberos.</p>
                 <div class="res-fotos">
                     {% for f in resultado.fotos %}
-                        <div class="res-foto">
+                        {% if usuario_sesion %}<a href="/barbero/{{ f.id_barbero.id_barbero }}/" class="res-foto">{% else %}<div class="res-foto">{% endif %}
                             <img src="{{ f.imagen.url }}" alt="{{ f.nombre_estilo|default:'Trabajo de barbería' }}" loading="lazy">
                             <span>{{ f.nombre_estilo|default:"Corte a medida" }} · {{ f.id_barbero.id_usuario.nombre }}</span>
-                        </div>
+                        {% if usuario_sesion %}</a>{% else %}</div>{% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -275,6 +297,28 @@
             </div>
         {% endif %}
 
+        <script>
+            (function () {
+                var boton = document.getElementById('btnCopiar');
+                var aviso = document.getElementById('copiado');
+                if (!boton || !aviso) { return; }
+
+                boton.addEventListener('click', function () {
+                    function listo() {
+                        aviso.textContent = 'Enlace copiado.';
+                        setTimeout(function () { aviso.textContent = ''; }, 3000);
+                    }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(window.location.href).then(listo, function () {
+                            aviso.textContent = 'No se pudo copiar. Copia la dirección de la barra del navegador.';
+                        });
+                    } else {
+                        aviso.textContent = 'Copia la dirección de la barra del navegador.';
+                    }
+                });
+            })();
+        </script>
+
     {% elif sin_resultado %}
 
         <div class="card">
@@ -286,11 +330,14 @@
         <!-- ================= CUESTIONARIO ================= -->
         <form method="GET" action="/asistente/" id="formAsistente">
 
-            <div class="asist-progreso"><div class="asist-barra" id="asistBarra"></div></div>
-            <div class="asist-progreso-texto" id="asistTexto">Pregunta 1 de 5</div>
+            <div class="asist-progreso" id="asistProgreso" role="progressbar" aria-label="Progreso del test" aria-valuemin="1" aria-valuenow="1" aria-valuemax="5">
+                <div class="asist-barra" id="asistBarra"></div>
+            </div>
+            <div class="asist-progreso-texto" id="asistTexto" aria-live="polite">Pregunta 1 de 5</div>
 
-            <section class="asist-paso activo">
-                <h2 class="asist-pregunta">¿Qué te quieres hacer hoy?</h2>
+            <section class="asist-paso activo" role="group" aria-labelledby="pq1">
+                <h2 class="asist-pregunta" id="pq1" tabindex="-1">¿Qué te quieres hacer hoy?</h2>
+                <p class="asist-pista">Así te mostramos solo las preguntas que sí aplican.</p>
                 <div class="asist-opciones">
                     <label class="asist-opcion"><input type="radio" name="queres" value="cabello"><span class="asist-tarjeta"><strong>Solo el corte</strong><small>Cabello, sin tocar la barba</small></span></label>
                     <label class="asist-opcion"><input type="radio" name="queres" value="ambos"><span class="asist-tarjeta"><strong>Corte y barba</strong><small>Cabello y barba en la misma visita</small></span></label>
@@ -298,8 +345,9 @@
                 </div>
             </section>
 
-            <section class="asist-paso" data-solo="cabello,ambos">
-                <h2 class="asist-pregunta">¿Cómo es tu cabello?</h2>
+            <section class="asist-paso" data-solo="cabello,ambos" role="group" aria-labelledby="pq2">
+                <h2 class="asist-pregunta" id="pq2" tabindex="-1">¿Cómo es tu cabello?</h2>
+                <p class="asist-pista">El tipo de cabello cambia cómo se ve el corte y cuánto dura.</p>
                 <div class="asist-opciones">
                     <label class="asist-opcion"><input type="radio" name="cabello" value="liso"><span class="asist-tarjeta"><strong>Liso</strong><small>Cae recto y suave</small></span></label>
                     <label class="asist-opcion"><input type="radio" name="cabello" value="ondulado"><span class="asist-tarjeta"><strong>Ondulado</strong><small>Con algo de movimiento</small></span></label>
@@ -308,8 +356,9 @@
                 </div>
             </section>
 
-            <section class="asist-paso" data-solo="cabello,ambos">
-                <h2 class="asist-pregunta">¿Qué forma tiene tu cara?</h2>
+            <section class="asist-paso" data-solo="cabello,ambos" role="group" aria-labelledby="pq3">
+                <h2 class="asist-pregunta" id="pq3" tabindex="-1">¿Qué forma tiene tu cara?</h2>
+                <p class="asist-pista">La forma del rostro ayuda a elegir el largo de los laterales y la altura de arriba.</p>
                 <div class="asist-opciones">
                     <label class="asist-opcion"><input type="radio" name="cara" value="ovalada"><span class="asist-tarjeta"><strong>Ovalada</strong><small>Proporcionada, un poco más larga que ancha</small></span></label>
                     <label class="asist-opcion"><input type="radio" name="cara" value="redonda"><span class="asist-tarjeta"><strong>Redonda</strong><small>Mejillas llenas, ancho y largo parecidos</small></span></label>
@@ -319,8 +368,9 @@
                 </div>
             </section>
 
-            <section class="asist-paso">
-                <h2 class="asist-pregunta">¿Cuánto mantenimiento quieres?</h2>
+            <section class="asist-paso" role="group" aria-labelledby="pq4">
+                <h2 class="asist-pregunta" id="pq4" tabindex="-1">¿Cuánto mantenimiento quieres?</h2>
+                <p class="asist-pista">Un degradado necesita retoques más seguidos que un corte clásico.</p>
                 <div class="asist-opciones">
                     <label class="asist-opcion"><input type="radio" name="mantenimiento" value="bajo"><span class="asist-tarjeta"><strong>Lo mínimo</strong><small>Voy cada 5 o 6 semanas</small></span></label>
                     <label class="asist-opcion"><input type="radio" name="mantenimiento" value="medio"><span class="asist-tarjeta"><strong>Normal</strong><small>Voy cada 3 o 4 semanas</small></span></label>
@@ -328,8 +378,9 @@
                 </div>
             </section>
 
-            <section class="asist-paso" data-solo="cabello,ambos">
-                <h2 class="asist-pregunta">¿Qué estilo buscas?</h2>
+            <section class="asist-paso" data-solo="cabello,ambos" role="group" aria-labelledby="pq5">
+                <h2 class="asist-pregunta" id="pq5" tabindex="-1">¿Qué estilo buscas?</h2>
+                <p class="asist-pista">Si no tienes claro, elige «Sorpréndeme» y el asistente decide por ti.</p>
                 <div class="asist-opciones">
                     <label class="asist-opcion"><input type="radio" name="estilo" value="clasico"><span class="asist-tarjeta"><strong>Clásico y elegante</strong><small>Atemporal, siempre bien peinado</small></span></label>
                     <label class="asist-opcion"><input type="radio" name="estilo" value="urbano"><span class="asist-tarjeta"><strong>Moderno y urbano</strong><small>Degradados y líneas marcadas</small></span></label>
@@ -339,10 +390,13 @@
 
             <div class="asist-nav">
                 <button type="button" class="btn btn-borde" id="asistAtras" style="visibility: hidden;">
-                    <svg class="ico"><use href="#as-left"/></svg>Atrás
+                    <svg class="ico" aria-hidden="true"><use href="#as-left"/></svg>Atrás
                 </button>
-                <button type="submit" class="btn btn-primario" id="asistVer" style="display: none;">
-                    <svg class="ico"><use href="#as-spark"/></svg>Ver mi recomendación
+                <button type="button" class="btn btn-primario" id="asistSiguiente" disabled>
+                    Siguiente<svg class="ico" aria-hidden="true"><use href="#as-right"/></svg>
+                </button>
+                <button type="submit" class="btn btn-primario" id="asistVer" style="display: none;" disabled>
+                    <svg class="ico" aria-hidden="true"><use href="#as-spark"/></svg>Ver mi recomendación
                 </button>
             </div>
 
@@ -355,17 +409,21 @@
 
                 var todos = Array.prototype.slice.call(form.querySelectorAll('.asist-paso'));
                 var barra = document.getElementById('asistBarra');
+                var progreso = document.getElementById('asistProgreso');
                 var texto = document.getElementById('asistTexto');
                 var btnAtras = document.getElementById('asistAtras');
+                var btnSig = document.getElementById('asistSiguiente');
                 var btnVer = document.getElementById('asistVer');
                 var actual = 0;
+                var temporizador = null;
+                var conPuntero = false;   // true si la persona está usando mouse o dedo; false si usa el teclado
 
                 function queres() {
                     var marcado = form.querySelector('input[name="queres"]:checked');
                     return marcado ? marcado.value : null;
                 }
 
-                // Si elige "solo barba", se saltan las preguntas del cabello y de la cara
+                // Si elige "solo barba", se saltan las preguntas del cabello, la cara y el estilo
                 function visibles() {
                     var q = queres();
                     return todos.filter(function (p) {
@@ -375,7 +433,9 @@
                     });
                 }
 
-                function pintar() {
+                function respondida(paso) { return paso.querySelector('input:checked') !== null; }
+
+                function pintar(moverFoco) {
                     var lista = visibles();
                     if (actual > lista.length - 1) { actual = lista.length - 1; }
 
@@ -384,33 +444,78 @@
                     paso.classList.add('activo');
 
                     barra.style.width = ((actual + 1) / lista.length * 100) + '%';
+                    progreso.setAttribute('aria-valuenow', actual + 1);
+                    progreso.setAttribute('aria-valuemax', lista.length);
                     texto.textContent = 'Pregunta ' + (actual + 1) + ' de ' + lista.length;
                     btnAtras.style.visibility = actual === 0 ? 'hidden' : 'visible';
 
-                    var respondida = paso.querySelector('input:checked') !== null;
-                    btnVer.style.display = (actual === lista.length - 1 && respondida) ? 'inline-flex' : 'none';
+                    var ultima = actual === lista.length - 1;
+                    var hecha = respondida(paso);
+                    btnSig.style.display = ultima ? 'none' : 'inline-flex';
+                    btnSig.disabled = !hecha;
+                    btnVer.style.display = ultima ? 'inline-flex' : 'none';
+                    btnVer.disabled = !hecha;
+
+                    // Al cambiar de pregunta, el foco pasa al título (así los lectores de pantalla lo anuncian)
+                    if (moverFoco) {
+                        var titulo = paso.querySelector('.asist-pregunta');
+                        if (titulo) { titulo.focus({ preventScroll: true }); }
+                    }
                 }
 
-                // Al elegir una opción, pasa solo a la siguiente pregunta
+                function avanzar() {
+                    var lista = visibles();
+                    if (actual < lista.length - 1 && respondida(lista[actual])) {
+                        actual += 1;
+                        pintar(true);
+                    }
+                }
+
+                // Mouse o dedo: pasa solo a la siguiente pregunta. Teclado: no empuja, se usa «Siguiente».
+                form.addEventListener('pointerdown', function () { conPuntero = true; });
+                form.addEventListener('keydown', function () { conPuntero = false; });
+
                 form.addEventListener('click', function (e) {
                     var el = e.target;
                     if (!el || el.type !== 'radio') { return; }
 
-                    if (actual < visibles().length - 1) {
-                        setTimeout(function () {
-                            actual = Math.min(actual + 1, visibles().length - 1);
-                            pintar();
-                        }, 260);
-                    } else {
-                        pintar();
+                    // Si cambia de opinión antes de que avance, se cancela el avance anterior (así no se salta preguntas)
+                    clearTimeout(temporizador);
+                    pintar(false);
+
+                    var ultima = actual === visibles().length - 1;
+                    if (!ultima && conPuntero) {
+                        temporizador = setTimeout(avanzar, 450);
                     }
                 });
 
-                btnAtras.addEventListener('click', function () {
-                    if (actual > 0) { actual -= 1; pintar(); }
+                btnSig.addEventListener('click', function () {
+                    clearTimeout(temporizador);
+                    avanzar();
                 });
 
-                pintar();
+                btnAtras.addEventListener('click', function () {
+                    clearTimeout(temporizador);
+                    if (actual > 0) { actual -= 1; pintar(true); }
+                });
+
+                // Al enviar, las respuestas de preguntas que ya no aplican no viajan en la dirección
+                form.addEventListener('submit', function () {
+                    var lista = visibles();
+                    todos.forEach(function (p) {
+                        if (lista.indexOf(p) === -1) {
+                            p.querySelectorAll('input').forEach(function (i) { i.disabled = true; });
+                        }
+                    });
+                });
+
+                // Si vuelve con la flecha «Atrás» del navegador, se reactivan las respuestas
+                window.addEventListener('pageshow', function () {
+                    form.querySelectorAll('input').forEach(function (i) { i.disabled = false; });
+                    pintar(false);
+                });
+
+                pintar(false);
             })();
         </script>
 

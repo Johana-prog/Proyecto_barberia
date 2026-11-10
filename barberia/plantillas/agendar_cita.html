@@ -1,15 +1,10 @@
 {% extends 'base.html' %}
-{% load static %}
 
+{% load static %}
+{% block titulo %}Solicitar turno - Usme Barber Top{% endblock %}
 {% block contenido %}
 <style>
     .agendar-wrap { max-width: 600px; }
-
-    .alerta-error {
-        background: rgba(140, 42, 42, 0.18);
-        border-color: rgba(163, 51, 51, 0.55);
-        color: #E3A0A0;
-    }
 
     .paso-label {
         display: flex;
@@ -54,29 +49,27 @@
             <p class="panel-subtitulo">Elige un horario libre y el servicio que quieres.</p>
         </header>
 
-        {% if mensaje %}
-            <div class="alerta alerta-ok">{{ mensaje }}</div>
-        {% endif %}
-        {% if mensaje_error %}
-            <div class="alerta alerta-error">{{ mensaje_error }}</div>
-        {% endif %}
-
         <div class="card">
             {% if turnos %}
             <form method="POST">
                 {% csrf_token %}
 
                 <div class="campo">
-                    <div class="paso-label"><span class="paso-num">1</span>Horario libre</div>
-                    <select name="turno_id" class="select" required>
-                        {% for t in turnos %}
-                            <option value="{{ t.id_cita }}">{{ t.fecha }} · {{ t.hora }} — con {{ t.id_barbero.id_usuario.nombre }} {{ t.id_barbero.id_usuario.apellido }}</option>
+                    <label for="selTurno" class="paso-label"><span class="paso-num" aria-hidden="true">1</span>Horario libre</label>
+                    <select name="turno_id" id="selTurno" class="select" required>
+                        {% regroup turnos by fecha as dias %}
+                        {% for dia in dias %}
+                            <optgroup label="{{ dia.grouper|date:'l j \d\e F' }}">
+                                {% for t in dia.list %}
+                                    <option value="{{ t.id_cita }}">{{ t.hora|time:'g:i A' }} — con {{ t.id_barbero.id_usuario.nombre }} {{ t.id_barbero.id_usuario.apellido }}</option>
+                                {% endfor %}
+                            </optgroup>
                         {% endfor %}
                     </select>
                 </div>
 
                 <div class="campo" style="margin-bottom: 0;">
-                    <div class="paso-label"><span class="paso-num">2</span>Servicio</div>
+                    <label for="selServicio" class="paso-label"><span class="paso-num" aria-hidden="true">2</span>Servicio</label>
                     <select name="servicio_elegido" id="selServicio" class="select" required>
                         {% for s in servicios %}
                             <option value="{{ s.id_servicio }}" data-precio="{{ s.precio|floatformat:'0' }}" {% if servicio_pre == s.id_servicio|stringformat:'d' %}selected{% endif %}>{{ s.nombre_servicio }} — ${{ s.precio|floatformat:"0g" }} COP</option>
@@ -85,10 +78,10 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="resumen-precio" id="resumenPrecio"></div>
+                <div class="resumen-precio" id="resumenPrecio" aria-live="polite"></div>
 
                 <button type="submit" class="btn btn-primario btn-block">
-                    <svg class="ico"><use href="#i-scissors"/></svg>Reservar este turno
+                    <svg class="ico" aria-hidden="true"><use href="#i-calendar-check"/></svg>Reservar este turno
                 </button>
             </form>
             {% else %}
@@ -98,12 +91,12 @@
 
         {% if barberos_disponibles %}
         <div class="card">
-            <div class="card-titulo"><svg class="ico"><use href="#i-user"/></svg>Conoce a tu barbero</div>
-            <p class="card-desc">Mira su especialidad y sus trabajos antes de decidir.</p>
+            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg>Conoce a tu barbero</div>
+            <p class="card-desc">Mira su especialidad y sus trabajos antes de decidir. Se abre en otra pestaña, así no pierdes lo que elegiste.</p>
             <div class="acciones">
                 {% for b in barberos_disponibles %}
-                    <a href="/barbero/{{ b.id_barbero }}/" target="_blank" class="btn btn-borde btn-sm">
-                        <svg class="ico"><use href="#i-user"/></svg>{{ b.id_usuario.nombre }}
+                    <a href="/barbero/{{ b.id_barbero }}/" target="_blank" rel="noopener" class="btn btn-borde btn-sm">
+                        <svg class="ico" aria-hidden="true"><use href="#i-user"/></svg>{{ b.id_usuario.nombre }}
                     </a>
                 {% endfor %}
             </div>

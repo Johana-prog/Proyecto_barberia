@@ -1,13 +1,15 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block titulo %}Acerca de - Usme Barber Top{% endblock %}
+
 {% block contenido %}
 <style>
     .acerca-pagina { max-width: 760px; margin: 0 auto; padding: 48px 6% 70px; }
 
     .marca-bloque { text-align: center; }
 
-    .marca-bloque h2 {
+    .marca-bloque h1 {
         font-family: 'Bebas Neue', sans-serif;
         font-size: 2.4rem;
         letter-spacing: 2px;
@@ -23,6 +25,58 @@
 
     .texto-mision:last-child { margin-bottom: 0; color: var(--piedra); }
 
+    /* ---- Cómo funciona ---- */
+    .pasos { list-style: none; display: grid; gap: 18px; margin-top: 16px; }
+
+    .pasos li { display: flex; align-items: flex-start; gap: 14px; }
+
+    .paso-num {
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--dorado-suave);
+        border: 1px solid rgba(201, 162, 39, 0.5);
+        color: var(--dorado);
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .pasos strong { display: block; margin-bottom: 2px; color: var(--hueso); font-size: 0.98rem; }
+    .pasos .paso-txt { color: var(--piedra); font-size: 0.92rem; line-height: 1.6; }
+
+    /* ---- Preguntas frecuentes ---- */
+    .faq { margin-top: 8px; }
+    .faq details { border-bottom: 1px solid var(--borde); }
+    .faq details:last-child { border-bottom: 0; }
+
+    .faq summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 15px 0;
+        color: var(--hueso);
+        font-size: 0.98rem;
+        font-weight: 700;
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: '+'; color: var(--dorado); font-size: 1.4rem; line-height: 1; }
+    .faq details[open] summary::after { content: '\2212'; }
+    .faq summary:focus-visible { outline: 2px solid var(--dorado); outline-offset: 2px; border-radius: 4px; }
+
+    .faq .resp { padding: 0 0 16px; color: var(--piedra); font-size: 0.92rem; line-height: 1.7; }
+    .faq .resp a { color: var(--dorado); text-decoration: underline; }
+    .faq .resp ul { margin: 8px 0 0; padding-left: 18px; }
+    .faq .resp li { margin-bottom: 4px; }
+    .faq .resp strong { color: var(--hueso); }
+
+    /* ---- SENA ---- */
     .sena-bloque {
         display: flex;
         align-items: center;
@@ -66,7 +120,7 @@
 
     <header class="panel-header marca-bloque">
         <div class="panel-eyebrow">Quiénes somos</div>
-        <h2>Usme Barber Top</h2>
+        <h1>Usme Barber Top</h1>
         <div class="linea-dorada centrada"></div>
     </header>
 
@@ -84,8 +138,83 @@
     </div>
 
     <div class="card">
+        <div class="card-titulo">Cómo funciona</div>
+        <ol class="pasos">
+            <li>
+                <span class="paso-num" aria-hidden="true">1</span>
+                <div>
+                    <strong>Crea tu cuenta o inicia sesión</strong>
+                    <span class="paso-txt">Solo necesitas tu nombre, documento, correo y una contraseña de mínimo 8 caracteres.</span>
+                </div>
+            </li>
+            <li>
+                <span class="paso-num" aria-hidden="true">2</span>
+                <div>
+                    <strong>Elige tu horario y tu servicio</strong>
+                    <span class="paso-txt">Ves solo los horarios libres de nuestros barberos y el total a pagar al instante.</span>
+                </div>
+            </li>
+            <li>
+                <span class="paso-num" aria-hidden="true">3</span>
+                <div>
+                    <strong>Espera la confirmación</strong>
+                    <span class="paso-txt">Tu cita queda pendiente hasta que la barbería la confirme. Sigue su estado en «Mi agenda».</span>
+                </div>
+            </li>
+            <li>
+                <span class="paso-num" aria-hidden="true">4</span>
+                <div>
+                    <strong>Si no puedes ir, cancela</strong>
+                    <span class="paso-txt">Desde «Mi agenda», y el horario queda libre para otra persona.</span>
+                </div>
+            </li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <div class="card-titulo">Preguntas frecuentes</div>
+        <div class="faq">
+
+            <details>
+                <summary>¿Puedo cancelar mi cita?</summary>
+                <div class="resp">
+                    Sí, desde «Mi agenda», hasta 2 horas antes de la cita. El horario queda libre para otras personas.
+                    Si falta menos tiempo, <a href="/contacto-info/">comunícate con la barbería</a>.
+                </div>
+            </details>
+
+            <details>
+                <summary>¿Qué significa el estado de mi cita?</summary>
+                <div class="resp">
+                    <ul>
+                        <li><strong>Pendiente:</strong> ya reservaste y la barbería todavía no la confirma.</li>
+                        <li><strong>Confirmada:</strong> la barbería aprobó tu cita.</li>
+                        <li><strong>Atendida:</strong> ya te atendimos.</li>
+                        <li><strong>Cancelada:</strong> la cita se anuló y el horario quedó libre.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details>
+                <summary>¿Cómo sé qué corte me queda?</summary>
+                <div class="resp">
+                    Responde 5 preguntas rápidas en el <a href="/asistente/">asistente de estilo</a> y te recomendamos un servicio.
+                </div>
+            </details>
+
+            <details>
+                <summary>¿Puedo ver el trabajo de un barbero antes de reservar?</summary>
+                <div class="resp">
+                    Sí. En <a href="/galeria/">Estilos de corte</a> ves fotos reales de su trabajo. Al iniciar sesión, también puedes abrir el perfil de cada barbero.
+                </div>
+            </details>
+
+        </div>
+    </div>
+
+    <div class="card">
         <div class="sena-bloque">
-            <img src="{% static 'imagenes/sena.png' %}" alt="Logo SENA" class="sena-logo">
+            <img src="{% static 'imagenes/sena.png' %}" alt="Logo del SENA" class="sena-logo">
             <div class="sena-datos">
                 <div class="panel-eyebrow">Proyecto académico</div>
                 <h3>Desarrollado para el SENA</h3>

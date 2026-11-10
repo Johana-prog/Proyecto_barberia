@@ -49,25 +49,25 @@
     <div class="graficas-grid">
 
         <div class="card">
-            <div class="card-titulo"><svg class="ico"><use href="#i-banknote"/></svg>Ingresos por mes</div>
-            <p class="card-desc">Citas finalizadas de los últimos 6 meses.</p>
+            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-banknote"/></svg>Ingresos por mes</div>
+            <p class="card-desc">Citas atendidas de los últimos 6 meses.</p>
             <div class="grafica-box" id="box-ingresos"><canvas id="gIngresos"></canvas></div>
         </div>
 
         <div class="card">
-            <div class="card-titulo"><svg class="ico"><use href="#i-scissors"/></svg>Servicios más pedidos</div>
+            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>Servicios más pedidos</div>
             <p class="card-desc">Sin contar las citas canceladas.</p>
             <div class="grafica-box" id="box-servicios"><canvas id="gServicios"></canvas></div>
         </div>
 
         <div class="card">
-            <div class="card-titulo"><svg class="ico"><use href="#i-calendar-check"/></svg>Citas por estado</div>
+            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-calendar-check"/></svg>Citas por estado</div>
             <p class="card-desc">Cómo van todas las reservas.</p>
             <div class="grafica-box" id="box-estados"><canvas id="gEstados"></canvas></div>
         </div>
 
         <div class="card">
-            <div class="card-titulo"><svg class="ico"><use href="#i-users"/></svg>Citas por barbero</div>
+            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg>Citas por barbero</div>
             <p class="card-desc">Reservas activas de cada barbero.</p>
             <div class="grafica-box" id="box-barberos"><canvas id="gBarberos"></canvas></div>
         </div>
@@ -84,7 +84,8 @@
         if (!nodo) { return; }
         var datos = JSON.parse(nodo.textContent);
 
-        var DORADO = '#C9A227', BURDEOS = '#A33333', SALVIA = '#5E8C6A', HUESO = '#F2ECE2';
+        // El rojo es más claro que el burdeos del botón para que se distinga del fondo (contraste 3:1 o más)
+        var DORADO = '#C9A227', ROJO_CLARO = '#C0504D', SALVIA = '#5E8C6A', HUESO = '#F2ECE2';
 
         function dinero(v) { return '$' + Number(v).toLocaleString('es-CO'); }
 
@@ -96,10 +97,25 @@
             return valores.some(function (v) { return v > 0; });
         }
 
+        // Descripción en texto de la gráfica, para lectores de pantalla
+        function describir(idCanvas, titulo, etiquetas, valores, formato) {
+            var lienzo = document.getElementById(idCanvas);
+            if (!lienzo) { return; }
+            var partes = etiquetas.map(function (e, i) {
+                return e + ': ' + (formato ? formato(valores[i]) : valores[i]);
+            });
+            lienzo.setAttribute('role', 'img');
+            lienzo.setAttribute('aria-label', titulo + '. ' + partes.join('; ') + '.');
+        }
+
         function dibujar() {
             Chart.defaults.color = '#9A9288';
             Chart.defaults.font.family = "'Segoe UI', Tahoma, sans-serif";
             Chart.defaults.borderColor = '#2E2926';
+
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                Chart.defaults.animation = false;
+            }
 
             var sinLeyenda = { legend: { display: false } };
 
@@ -124,8 +140,10 @@
                         }
                     }
                 });
+                describir('gIngresos', 'Ingresos por mes', datos.ingresos.etiquetas, datos.ingresos.valores,
+                    function (v) { return dinero(v) + ' COP'; });
             } else {
-                sinDatos('box-ingresos', 'Aún no hay citas finalizadas para mostrar ingresos.');
+                sinDatos('box-ingresos', 'Aún no hay citas atendidas para mostrar ingresos.');
             }
 
             // 2. Servicios más pedidos
@@ -134,7 +152,7 @@
                     type: 'bar',
                     data: {
                         labels: datos.servicios.etiquetas,
-                        datasets: [{ data: datos.servicios.valores, backgroundColor: BURDEOS, borderRadius: 6, maxBarThickness: 30 }]
+                        datasets: [{ data: datos.servicios.valores, backgroundColor: ROJO_CLARO, borderRadius: 6, maxBarThickness: 30 }]
                     },
                     options: {
                         indexAxis: 'y',
@@ -147,6 +165,7 @@
                         }
                     }
                 });
+                describir('gServicios', 'Servicios más pedidos', datos.servicios.etiquetas, datos.servicios.valores);
             } else {
                 sinDatos('box-servicios', 'Aún no hay reservas para mostrar.');
             }
@@ -159,7 +178,7 @@
                         labels: datos.estados.etiquetas,
                         datasets: [{
                             data: datos.estados.valores,
-                            backgroundColor: [DORADO, SALVIA, HUESO, BURDEOS],
+                            backgroundColor: [DORADO, SALVIA, HUESO, ROJO_CLARO],
                             borderColor: '#1D1A18',
                             borderWidth: 3
                         }]
@@ -171,6 +190,7 @@
                         plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16 } } }
                     }
                 });
+                describir('gEstados', 'Citas por estado', datos.estados.etiquetas, datos.estados.valores);
             } else {
                 sinDatos('box-estados', 'Aún no hay citas para mostrar.');
             }
@@ -193,6 +213,7 @@
                         }
                     }
                 });
+                describir('gBarberos', 'Citas por barbero', datos.barberos.etiquetas, datos.barberos.valores);
             } else {
                 sinDatos('box-barberos', 'Aún no hay reservas para mostrar.');
             }

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-
+{% block titulo %}Editar perfil - Usme Barber Top{% endblock %}
 {% block contenido %}
 <style>
     .perfil-wrap { max-width: 540px; }
@@ -33,15 +33,17 @@
 
     .perfil-rol {
         color: var(--dorado);
-        font-size: 0.7rem;
+        font-size: 0.78rem;
         font-weight: 700;
         letter-spacing: 2px;
         text-transform: uppercase;
     }
 
-    .perfil-archivo { color: var(--piedra); font-size: 0.78rem; }
+    .perfil-archivo { color: var(--piedra); font-size: 0.82rem; }
 
     .fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .campo-ayuda { margin: 6px 0 0; color: var(--piedra); font-size: 0.82rem; }
 
     @media (max-width: 600px) { .fila-2 { grid-template-columns: 1fr; } }
 </style>
@@ -58,10 +60,6 @@
             <p class="panel-subtitulo">Actualiza tus datos personales y tu foto.</p>
         </header>
 
-        {% if mensaje %}
-            <div class="alerta alerta-ok">{{ mensaje }}</div>
-        {% endif %}
-
         <div class="card">
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
@@ -71,42 +69,42 @@
                         <img id="previewFoto" class="perfil-avatar" src="{{ usuario.foto.url }}" alt="Tu foto de perfil">
                     {% else %}
                         <img id="previewFoto" class="perfil-avatar" alt="Tu foto de perfil" style="display: none;">
-                        <span id="previewVacio" class="perfil-avatar perfil-avatar-vacio">{{ usuario.nombre|first|upper }}</span>
+                        <span id="previewVacio" class="perfil-avatar perfil-avatar-vacio" aria-hidden="true">{{ usuario.nombre|first|upper }}</span>
                     {% endif %}
 
-                    <span class="perfil-rol">{{ usuario.rol }}</span>
 
                     <label for="inputFoto" class="btn btn-borde btn-sm">
-                        <svg class="ico" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                         Cambiar foto
                     </label>
                     <input type="file" id="inputFoto" name="foto" accept="image/*" hidden>
-                    <span id="nombreArchivo" class="perfil-archivo"></span>
+                    <span id="nombreArchivo" class="perfil-archivo">Máximo 5 MB.</span>
                 </div>
 
                 <div class="fila-2">
                     <div class="campo">
                         <label for="nombre">Nombre</label>
-                        <input type="text" id="nombre" name="nombre" class="input" value="{{ usuario.nombre }}" required>
+                        <input type="text" id="nombre" name="nombre" class="input" value="{{ usuario.nombre }}" autocomplete="given-name" required>
                     </div>
                     <div class="campo">
                         <label for="apellido">Apellido</label>
-                        <input type="text" id="apellido" name="apellido" class="input" value="{{ usuario.apellido }}" required>
+                        <input type="text" id="apellido" name="apellido" class="input" value="{{ usuario.apellido }}" autocomplete="family-name" required>
                     </div>
                 </div>
 
                 <div class="campo">
                     <label for="telefono">Teléfono</label>
-                    <input type="text" id="telefono" name="telefono" class="input" value="{{ usuario.telefono|default_if_none:'' }}">
+                    <input type="tel" id="telefono" name="telefono" class="input" value="{{ usuario.telefono|default_if_none:'' }}" autocomplete="tel">
                 </div>
 
                 <div class="campo" style="margin-bottom: 24px;">
                     <label for="correo">Correo</label>
-                    <input type="email" id="correo" name="correo" class="input" value="{{ usuario.correo }}" required>
+                    <input type="email" id="correo" name="correo" class="input" value="{{ usuario.correo }}" autocomplete="email" required aria-describedby="ayudaCorreo">
+                    <p class="campo-ayuda" id="ayudaCorreo">Con este correo inicias sesión. Si lo cambias, usa el nuevo la próxima vez.</p>
                 </div>
 
                 <button type="submit" class="btn btn-primario btn-block">
-                    <svg class="ico"><use href="#i-scissors"/></svg>Guardar cambios
+                    <svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Guardar cambios
                 </button>
             </form>
         </div>

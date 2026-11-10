@@ -1,11 +1,11 @@
 <!-- Barra superior y fondo del cajón: solo se ven en celular y tablet (ver panel.css) -->
 <div class="m-topbar">
     <button type="button" class="m-menu-btn" id="mMenuBtn" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false">
-        <svg class="ico" viewBox="0 0 24 24"><line x1="4" x2="20" y1="7" y2="7"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="17" y2="17"/></svg>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" x2="20" y1="7" y2="7"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="17" y2="17"/></svg>
     </button>
     <span class="m-topbar-titulo">USME BARBER TOP</span>
 </div>
-<div class="m-backdrop" id="mBackdrop"></div>
+<div class="m-backdrop" id="mBackdrop" aria-hidden="true"></div>
 
 <script>
     (function () {
@@ -15,7 +15,9 @@
         if (!sidebar || !boton) { return; }
 
         function sincronizar() {
-            boton.setAttribute('aria-expanded', sidebar.classList.contains('abierto') ? 'true' : 'false');
+            var abierto = sidebar.classList.contains('abierto');
+            boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+            boton.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú');
         }
 
         function cerrar() {
@@ -35,8 +37,12 @@
         });
 
         fondo.addEventListener('click', cerrar);
+
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') { cerrar(); }
+            if (e.key === 'Escape' && sidebar.classList.contains('abierto')) {
+                cerrar();
+                boton.focus();
+            }
         });
     })();
 </script>

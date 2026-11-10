@@ -2,19 +2,212 @@
 {% load static %}
 
 {% block contenido %}
+<style>
+    /* ---------- Hero ---------- */
+    /* La barra dorada solo se ve mientras pasa (antes dejaba un brillo en el borde izquierdo) */
+    .hero-fondo .cortina-navaja { opacity: 0; z-index: 1; }
+    .hero-fondo .cortina-navaja.deslizando { opacity: 1; }
+
+    .logo-flotante {
+        width: 170px;
+        max-width: 42vw;
+        height: auto;
+        filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 18px rgba(201, 162, 39, 0.28));
+    }
+
+    .in-datos {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin: 22px 0 0;
+        padding: 0;
+    }
+
+    .in-datos li {
+        padding: 6px 14px;
+        border: 1px solid rgba(242, 236, 226, 0.22);
+        border-radius: var(--radio);
+        background: rgba(20, 18, 17, 0.55);
+        color: var(--hueso);
+        font-size: 0.84rem;
+    }
+
+    .in-datos strong { color: var(--dorado); }
+
+    /* ---------- Secciones ---------- */
+    .in-seccion { max-width: 1100px; margin: 0 auto; padding: 70px 6% 10px; }
+    .in-ultima { padding-bottom: 80px; }
+
+    .tarjeta-servicio { transition: border-color 0.2s, transform 0.2s; }
+    .tarjeta-servicio:hover { border-color: var(--dorado); transform: translateY(-3px); }
+
+    .in-reservar {
+        display: inline-block;
+        margin-top: 14px;
+        color: var(--dorado);
+        font-size: 0.88rem;
+        font-weight: 700;
+        text-decoration: underline;
+    }
+
+    .in-reservar:hover { color: #E0BC45; }
+
+    /* ---------- Barberos ---------- */
+    .in-barberos {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 22px;
+        margin-top: 34px;
+    }
+
+    .in-barbero {
+        padding: 28px 20px 24px;
+        text-align: center;
+        background: var(--superficie);
+        border: 1px solid var(--borde);
+        border-radius: 14px;
+        transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .in-barbero:hover { border-color: var(--borde-fuerte); transform: translateY(-3px); }
+
+    .in-barbero-foto {
+        display: block;
+        width: 104px;
+        height: 104px;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--dorado);
+    }
+
+    .in-barbero-vacio {
+        display: grid;
+        place-items: center;
+        background: var(--superficie-2);
+        color: var(--dorado);
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 3rem;
+    }
+
+    .in-barbero h3 { color: var(--hueso); font-size: 1.08rem; }
+    .in-barbero-esp { margin-top: 4px; color: var(--dorado); font-size: 0.88rem; font-weight: 700; }
+    .in-barbero-exp { margin-top: 4px; color: var(--piedra); font-size: 0.85rem; }
+
+    /* ---------- Cómo funciona ---------- */
+    .in-pasos-lista {
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 22px;
+        margin: 34px 0 0;
+        padding: 0;
+    }
+
+    .in-pasos-lista li {
+        padding: 26px 24px;
+        background: var(--superficie);
+        border: 1px solid var(--borde);
+        border-radius: 14px;
+    }
+
+    .in-paso-num {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        margin-bottom: 14px;
+        border-radius: 50%;
+        background: var(--dorado-suave);
+        border: 1px solid rgba(201, 162, 39, 0.5);
+        color: var(--dorado);
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.3rem;
+    }
+
+    .in-pasos-lista h3 { margin-bottom: 6px; color: var(--hueso); font-size: 1.05rem; }
+    .in-pasos-lista p { color: var(--piedra); font-size: 0.92rem; line-height: 1.6; }
+
+    /* ---------- Visítanos ---------- */
+    .in-visita {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 28px;
+        padding: 34px 32px;
+        background: var(--superficie);
+        border: 1px solid var(--borde);
+        border-top: 3px solid var(--dorado);
+        border-radius: 14px;
+    }
+
+    .in-visita h2 {
+        margin-bottom: 14px;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 2rem;
+        letter-spacing: 1.5px;
+        color: var(--hueso);
+    }
+
+    .in-linea {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 8px;
+        color: var(--piedra);
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .in-linea svg {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        margin-top: 3px;
+        fill: none;
+        stroke: var(--dorado);
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    /* ---------- Aparecer al bajar ---------- */
+    .reveal { transition: opacity 0.6s ease, transform 0.6s ease; }
+    .con-js .reveal:not(.visible) { opacity: 0; transform: translateY(18px); }
+
+    @media (prefers-reduced-motion: reduce) {
+        .reveal, .tarjeta-servicio, .in-barbero { transition: none; }
+        .con-js .reveal:not(.visible) { opacity: 1; transform: none; }
+        .tarjeta-servicio:hover, .in-barbero:hover { transform: none; }
+    }
+</style>
+
+<script>document.documentElement.classList.add('con-js');</script>
+
+<!-- Íconos de esta pantalla -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="in-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="in-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+</svg>
 
 <div class="hero-fondo">
-    <div class="carrusel-slide activo" style="background-image: url('{% static 'imagenes/carrusel1.png' %}');"></div>
-    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel2.png' %}');"></div>
-    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel3.png' %}');"></div>
-    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel4.png' %}');"></div>
-    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel5.png' %}');"></div>
-    <div class="cortina-navaja" id="cortinaNavaja"></div>
+    <div class="carrusel-slide activo" aria-hidden="true" style="background-image: url('{% static 'imagenes/carrusel1.png' %}');"></div>
+    <div class="carrusel-slide" aria-hidden="true" style="background-image: url('{% static 'imagenes/carrusel2.png' %}');"></div>
+    <div class="carrusel-slide" aria-hidden="true" style="background-image: url('{% static 'imagenes/carrusel3.png' %}');"></div>
+    <div class="carrusel-slide" aria-hidden="true" style="background-image: url('{% static 'imagenes/carrusel4.png' %}');"></div>
+    <div class="carrusel-slide" aria-hidden="true" style="background-image: url('{% static 'imagenes/carrusel5.png' %}');"></div>
+    <div class="cortina-navaja" id="cortinaNavaja" aria-hidden="true"></div>
 
-    <div class="hero-overlay-oscuro"></div>
+    <div class="hero-overlay-oscuro" aria-hidden="true"></div>
 
     <div class="hero-contenido-flotante">
-        <img src="{% static 'imagenes/logo.png' %}" alt="Usme Barber Top" class="logo-flotante">
+        <img src="{% static 'imagenes/logo.png' %}" alt="" class="logo-flotante">
+
+        <h1 class="hero-titulo">Reserva tu corte en línea, sin filas ni llamadas</h1>
+        <p class="hero-subtitulo">Elige tu barbero, tu servicio y tu horario en menos de un minuto.</p>
 
         <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
             {% if usuario_sesion.rol == 'cliente' %}
@@ -24,46 +217,141 @@
             {% elif usuario_sesion.rol == 'administrador' %}
                 <a href="/dashboard-admin/" class="btn-dorado">Ir a mi panel</a>
             {% else %}
-                <a href="/login/" class="btn-dorado">Reservar mi cita</a>
+                <a href="/login/" class="btn-dorado">Iniciar sesión para reservar</a>
             {% endif %}
 
             <a href="/asistente/" class="btn btn-borde" style="height: 48px; padding: 0 26px; background: rgba(20, 18, 17, 0.55);">¿Qué corte me queda?</a>
         </div>
+
+        {% if not usuario_sesion %}
+            <p class="hero-nota">¿Primera vez? <a href="/registro/">Crea tu cuenta gratis</a></p>
+        {% endif %}
+
+        <ul class="in-datos" aria-label="Datos de la barbería">
+            {% if barberos %}<li><strong>{{ barberos|length }}</strong> barbero{{ barberos|length|pluralize }}</li>{% endif %}
+            {% if servicios %}<li><strong>{{ servicios|length }}</strong> servicio{{ servicios|length|pluralize }}</li>{% endif %}
+            <li>Cancela hasta 2 horas antes</li>
+        </ul>
     </div>
 </div>
 
-<div class="seccion-servicios" id="servicios">
-    <h2 class="titulo-seccion">Nuestros Servicios</h2>
+<section class="seccion-servicios reveal" id="servicios" aria-labelledby="titulo-servicios">
+    <h2 class="titulo-seccion" id="titulo-servicios">Nuestros Servicios</h2>
     <div class="linea-dorada centrada"></div>
     <div class="grid-servicios">
         {% for s in servicios %}
             <div class="tarjeta-servicio">
                 <h3>{{ s.nombre_servicio }}</h3>
                 <p class="descripcion-servicio">{{ s.descripcion|default:"Servicio profesional de barbería." }}</p>
+                {% if s.duracion_minutos %}<p class="duracion-servicio">{{ s.duracion_minutos }} min</p>{% endif %}
                 <p class="precio-servicio">${{ s.precio|floatformat:"0g" }} COP</p>
+                {% if usuario_sesion.rol == 'cliente' %}
+                    <a href="/agendar/?servicio={{ s.id_servicio }}" class="in-reservar">Reservar este servicio</a>
+                {% elif not usuario_sesion %}
+                    <a href="/login/" class="in-reservar">Inicia sesión para reservar</a>
+                {% endif %}
             </div>
         {% empty %}
-            <p style="color: #8A8580;">Muy pronto publicaremos nuestros servicios aquí.</p>
+            <p style="color: var(--piedra);">Muy pronto publicaremos nuestros servicios aquí.</p>
         {% endfor %}
     </div>
-</div>
+</section>
+
+{% if barberos %}
+<section class="in-seccion reveal" id="barberos" aria-labelledby="titulo-barberos">
+    <h2 class="titulo-seccion" id="titulo-barberos">Nuestros Barberos</h2>
+    <div class="linea-dorada centrada"></div>
+    <div class="in-barberos">
+        {% for b in barberos %}
+            <article class="in-barbero">
+                {% if b.id_usuario.foto %}
+                    <img class="in-barbero-foto" src="{{ b.id_usuario.foto.url }}" alt="Foto de {{ b.id_usuario.nombre }}" loading="lazy">
+                {% else %}
+                    <span class="in-barbero-foto in-barbero-vacio" aria-hidden="true">{{ b.id_usuario.nombre|first|upper }}</span>
+                {% endif %}
+                <h3>{{ b.id_usuario.nombre }} {{ b.id_usuario.apellido }}</h3>
+                <p class="in-barbero-esp">{% if b.especialidad and b.especialidad != 'Por definir' %}{{ b.especialidad }}{% else %}Barbero profesional{% endif %}</p>
+                {% if b.experiencia_anios %}<p class="in-barbero-exp">{{ b.experiencia_anios }} año{{ b.experiencia_anios|pluralize }} de experiencia</p>{% endif %}
+                {% if usuario_sesion %}<a href="/barbero/{{ b.id_barbero }}/" class="in-reservar">Ver perfil y trabajos</a>{% endif %}
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="in-seccion reveal" aria-labelledby="titulo-pasos">
+    <h2 class="titulo-seccion" id="titulo-pasos">Reservar es fácil</h2>
+    <div class="linea-dorada centrada"></div>
+    <ol class="in-pasos-lista">
+        <li>
+            <span class="in-paso-num" aria-hidden="true">1</span>
+            <h3>Elige tu horario</h3>
+            <p>Ves solo los turnos libres de nuestros barberos, sin llamar ni esperar respuesta.</p>
+        </li>
+        <li>
+            <span class="in-paso-num" aria-hidden="true">2</span>
+            <h3>Elige tu servicio</h3>
+            <p>Ves el total a pagar antes de reservar, sin sorpresas.</p>
+        </li>
+        <li>
+            <span class="in-paso-num" aria-hidden="true">3</span>
+            <h3>Llega a tu cita</h3>
+            <p>La barbería confirma tu reserva y tú sigues su estado en «Mi agenda».</p>
+        </li>
+    </ol>
+</section>
+
+<section class="in-seccion in-ultima reveal" aria-labelledby="titulo-visita">
+    <div class="in-visita">
+        <div>
+            <h2 id="titulo-visita">Visítanos</h2>
+            <p class="in-linea"><svg aria-hidden="true"><use href="#in-pin"/></svg><span>Sede principal: El Poblado, Medellín, Colombia.</span></p>
+            <p class="in-linea"><svg aria-hidden="true"><use href="#in-clock"/></svg><span>Lunes a sábado: 8:00 AM - 8:00 PM<br>Domingos y festivos: 9:00 AM - 4:00 PM</span></p>
+        </div>
+        <div class="acciones">
+            <a href="/contacto-info/" class="btn btn-primario">Cómo llegar y contacto</a>
+            <a href="/galeria/" class="btn btn-borde">Ver estilos de corte</a>
+        </div>
+    </div>
+</section>
 
 <script>
-    (function() {
-        const slides = document.querySelectorAll('.carrusel-slide');
-        const cortina = document.getElementById('cortinaNavaja');
-        let indiceActual = 0;
+    // Las secciones aparecen suavemente al bajar la página
+    (function () {
+        var elementos = document.querySelectorAll('.reveal');
+        if (!('IntersectionObserver' in window)) {
+            elementos.forEach(function (e) { e.classList.add('visible'); });
+            return;
+        }
+        var observador = new IntersectionObserver(function (entradas) {
+            entradas.forEach(function (entrada) {
+                if (entrada.isIntersecting) {
+                    entrada.target.classList.add('visible');
+                    observador.unobserve(entrada.target);
+                }
+            });
+        }, { threshold: 0.12 });
+        elementos.forEach(function (e) { observador.observe(e); });
+    })();
 
-        setInterval(function() {
+    // Carrusel del hero
+    (function () {
+        var slides = document.querySelectorAll('.carrusel-slide');
+        var cortina = document.getElementById('cortinaNavaja');
+        if (!slides.length || !cortina) { return; }
+
+        // Si la persona pidió menos movimiento en su sistema, el carrusel se queda quieto
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+
+        var actual = 0;
+        setInterval(function () {
             cortina.classList.add('deslizando');
-            setTimeout(function() {
-                slides[indiceActual].classList.remove('activo');
-                indiceActual = (indiceActual + 1) % slides.length;
-                slides[indiceActual].classList.add('activo');
+            setTimeout(function () {
+                slides[actual].classList.remove('activo');
+                actual = (actual + 1) % slides.length;
+                slides[actual].classList.add('activo');
             }, 400);
-            setTimeout(function() {
-                cortina.classList.remove('deslizando');
-            }, 900);
+            setTimeout(function () { cortina.classList.remove('deslizando'); }, 900);
         }, 4000);
     })();
 </script>

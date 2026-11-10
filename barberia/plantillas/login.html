@@ -1,12 +1,8 @@
 {% extends 'auth_base.html' %}
-
+{% block titulo %}Iniciar sesión - Usme Barber Top{% endblock %}
 {% block formulario %}
     <h1 class="auth-titulo">Iniciar sesión</h1>
     <p class="auth-sub">Ingresa con tu correo y tu contraseña</p>
-
-    {% if error %}
-        <div class="alerta alerta-error">{{ error }}</div>
-    {% endif %}
 
     <form method="POST">
         {% csrf_token %}
@@ -14,21 +10,21 @@
         <div class="campo">
             <label for="correo">Correo</label>
             <div class="campo-icono">
-                <svg class="ico"><use href="#i-mail"/></svg>
-                <input type="email" id="correo" name="correo" class="input" placeholder="tucorreo@ejemplo.com" required autofocus>
+                <svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg>
+                <input type="email" id="correo" name="correo" class="input" placeholder="tucorreo@ejemplo.com" value="{{ request.POST.correo }}" autocomplete="email" required autofocus>
             </div>
         </div>
 
         <div class="campo" style="margin-bottom: 24px;">
             <label for="clave">Contraseña</label>
             <div class="campo-icono">
-                <svg class="ico"><use href="#i-lock"/></svg>
-                <input type="password" id="clave" name="contraseña" class="input" placeholder="Tu contraseña" required>
+                <svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg>
+                <input type="password" id="clave" name="contraseña" class="input" placeholder="Tu contraseña" autocomplete="current-password" required>
             </div>
         </div>
 
         <button type="submit" class="btn btn-primario btn-block">
-            <svg class="ico"><use href="#i-scissors"/></svg>Entrar
+            <svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Entrar
         </button>
     </form>
 

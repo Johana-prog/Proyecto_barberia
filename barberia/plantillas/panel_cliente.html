@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block titulo %}Mi agenda - Usme Barber Top{% endblock %}
+
 {% block contenido %}
 <div class="panel-layout">
     {% include 'menu_lateral.html' %}
@@ -15,38 +17,73 @@
         </header>
 
         <div class="card">
-            <div class="card-titulo"><svg class="ico"><use href="#i-calendar-check"/></svg>Mi agenda</div>
-            <p class="card-desc">Todas tus citas, con su estado actual.</p>
+            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-calendar-check"/></svg>Próximas citas</div>
+            <p class="card-desc">Puedes cancelar hasta {{ horas_cancelar }} horas antes; el horario queda libre para otras personas.</p>
             <div class="lista-citas">
-                {% for c in citas %}
+                {% for c in proximas %}
                     <div class="cita-item">
                         <div>
-                            <div class="cita-fecha">{{ c.fecha }} · {{ c.hora }}</div>
-                            <div class="cita-servicio"><svg class="ico"><use href="#i-scissors"/></svg>{{ c.nombre_limpio_servicio }}</div>
+                            <div class="cita-fecha">{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</div>
+                            <div class="cita-servicio">
+                                <svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>
+                                {{ c.nombre_limpio_servicio }}{% if c.precio_mostrar %} · ${{ c.precio_mostrar|floatformat:"0g" }}{% endif %}
+                            </div>
+                            <p class="card-desc" style="margin: 4px 0 0;">Con {{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</p>
                         </div>
-                        <div>
-                            {% if c.estado == 'confirmada' %}
-                                <span class="badge badge-confirmada">Aprobada</span>
-                            {% elif c.estado == 'atendida' %}
-                                <span class="badge badge-atendida">Terminada</span>
-                            {% elif c.estado == 'cancelada' %}
-                                <span class="badge badge-cancelada">Cancelada</span>
+                        <div style="text-align: right;">
+                            <span class="badge badge-{{ c.estado }}">{{ c.estado|capfirst }}</span>
+
+                            {% if c.puede_cancelar %}
+                                <form method="post" style="margin-top: 8px;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
+                                    <button type="submit" name="cancelar_mi_cita" class="btn btn-borde btn-sm"
+                                            data-confirmar="Tu cita de {{ c.nombre_limpio_servicio }} del {{ c.fecha|date:'j \d\e F' }} a las {{ c.hora|time:'g:i A' }} se cancelará y el horario quedará libre para otras personas."
+                                            data-confirmar-titulo="¿Cancelar esta cita?"
+                                            data-confirmar-boton="Sí, cancelar">Cancelar cita</button>
+                                </form>
                             {% else %}
-                                <span class="badge badge-pendiente">En espera</span>
+                                <p class="card-desc" style="margin: 8px 0 0;">Ya no se puede cancelar desde aquí. Comunícate con la barbería.</p>
                             {% endif %}
                         </div>
                     </div>
                 {% empty %}
                     <div class="vacio">
-                        Todavía no tienes turnos agendados.<br>
-                        <a href="/agendar/" class="btn btn-primario"><svg class="ico"><use href="#i-scissors"/></svg>Solicitar turno</a>
+                        No tienes citas próximas.<br>
+                        <a href="/agendar/" class="btn btn-primario" style="margin-top:12px; display:inline-block;">
+                            <svg class="ico" aria-hidden="true"><use href="#i-calendar-plus"/></svg>Solicitar turno
+                        </a>
                     </div>
                 {% endfor %}
             </div>
         </div>
 
+        {% if historial %}
         <div class="card">
-            <div class="card-titulo"><svg class="ico"><use href="#i-banknote"/></svg>Nuestros servicios y tarifas</div>
+            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-calendar-check"/></svg>Historial</div>
+            <p class="card-desc">Tus citas pasadas y canceladas.</p>
+            <div class="lista-citas">
+                {% for c in historial %}
+                    <div class="cita-item">
+                        <div>
+                            <div class="cita-fecha">{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</div>
+                            <div class="cita-servicio">
+                                <svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>
+                                {{ c.nombre_limpio_servicio }}
+                            </div>
+                            <p class="card-desc" style="margin: 4px 0 0;">Con {{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="badge badge-{{ c.estado }}">{{ c.estado|capfirst }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-banknote"/></svg>Nuestros servicios y tarifas</div>
             <div class="lista-precios" style="margin-top: 12px;">
                 {% for s in servicios %}
                     <div class="fila">
@@ -63,4 +100,3 @@
     </main>
 </div>
 {% endblock %}
-

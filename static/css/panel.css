@@ -727,7 +727,7 @@
 }
 
 /* ---- Pantallas pequeñas ---- */
-@media (max-width: 900px) {
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
     .panel-main { padding: 24px 18px 50px; }
     .stats-grid { grid-template-columns: 1fr; }
     .panel-titulo { font-size: 2.1rem; }
@@ -792,7 +792,7 @@ body:has(.panel-layout) .sub-nav {
 .m-topbar,
 .m-backdrop { display: none; }
 
-@media (max-width: 900px) {
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
 
     /* El menú pasa a ser un cajón que entra desde la izquierda */
     .rail { width: 0; min-width: 0; }
@@ -913,4 +913,283 @@ body:has(.panel-layout) .sub-nav {
 
 @media (prefers-reduced-motion: reduce) {
     .sidebar, .sidebar:hover, .sidebar.abierto, .m-backdrop { transition: none; }
+}
+
+/* ============================================================
+   AUDITORÍA · FASE 1 (va SIEMPRE al final del archivo)
+   Accesibilidad, contraste y coherencia visual
+   ============================================================ */
+
+:root {
+    --borde-campo: #7A6F66;   /* 3:1 o más frente al fondo */
+    --radio-card: 12px;
+}
+
+/* ---- Saltar al contenido y texto solo para lectores de pantalla ---- */
+.skip-link {
+    position: fixed;
+    top: -64px;
+    left: 12px;
+    z-index: 3000;
+    padding: 10px 18px;
+    background: var(--dorado);
+    color: #1A1715;
+    font-weight: 700;
+    border-radius: var(--radio);
+    transition: top 0.2s;
+}
+
+.skip-link:focus { top: 12px; }
+.skip-link:hover, .skip-link:focus { color: #1A1715; }
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+#contenido-principal:focus { outline: none; }
+
+/* ---- Foco visible para teclado ---- */
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+.input:focus-visible,
+.select:focus-visible,
+.sub-tab-btn:focus-visible,
+.filtro:focus-visible {
+    outline: 2px solid var(--dorado);
+    outline-offset: 2px;
+}
+
+.sidebar .nav-item:focus-visible { outline: 2px solid var(--dorado); outline-offset: -2px; }
+
+/* ---- Campos con contraste suficiente ---- */
+.input, .select { border-color: var(--borde-campo); }
+.input:hover, .select:hover { border-color: #948779; }
+.input:focus, .select:focus { border-color: var(--dorado); }
+.input::placeholder { color: #8C8379; opacity: 1; }
+.input-file::file-selector-button { border-color: var(--borde-campo); }
+
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.select:-webkit-autofill { border-color: var(--borde-campo); }
+.input:-webkit-autofill:focus { border-color: var(--dorado); }
+
+/* ---- Las tarjetas se separan del fondo ---- */
+.card, .stat { box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28); }
+
+/* ---- Dos formas de esquina: controles (8) y contenedores (12) ---- */
+.card, .stat, .modal-caja { border-radius: var(--radio-card); }
+.alerta, .aviso, .cita-item, .foto-item, .badge { border-radius: var(--radio); }
+
+/* ---- Un solo color para "seleccionado": el dorado ---- */
+.sub-tab-btn.activo,
+.filtros .filtro.activo {
+    background: var(--dorado-suave);
+    border-color: var(--dorado);
+    color: var(--dorado);
+}
+
+.filtros .filtro.activo:hover { color: var(--dorado) !important; }
+
+/* ---- El botón del inicio es el mismo botón primario del resto ---- */
+.btn-dorado { background-color: var(--burdeos); color: var(--hueso); }
+.btn-dorado:hover { background-color: var(--burdeos-claro); color: var(--hueso) !important; }
+
+/* ---- Textos pequeños: mínimo 12 px ---- */
+.tabla th,
+.badge,
+.stat-label,
+.panel-eyebrow,
+.sb-usuario-datos small,
+.estilo-tag,
+.chip-resp { font-size: 0.75rem; }
+
+/* ---- Inicio ---- */
+.hero-fondo { height: auto; min-height: 520px; }
+.hero-contenido-flotante { height: auto; min-height: 520px; padding: 48px 20px; gap: 18px; }
+.logo-flotante { max-width: 190px; }
+.cortina-navaja { z-index: 1; }   /* ahora pasa detrás del contenido */
+
+.hero-titulo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.8rem;
+    letter-spacing: 1.5px;
+    line-height: 1.05;
+    color: var(--hueso);
+    max-width: 760px;
+}
+
+.hero-subtitulo { color: #CFC7BA; font-size: 1.05rem; line-height: 1.6; max-width: 560px; }
+.hero-nota { color: #CFC7BA; font-size: 0.88rem; }
+.hero-nota a { color: var(--dorado); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.duracion-servicio { color: var(--piedra); font-size: 0.78rem; margin-bottom: 8px; }
+
+@media (max-width: 850px) {
+    .hero-fondo, .hero-contenido-flotante { min-height: 480px; }
+    .hero-titulo { font-size: 2.1rem; }
+}
+
+/* ---- Ventana de confirmación (elemento dialog) ---- */
+.dialogo {
+    border: 1px solid var(--borde-fuerte);
+    border-top: 3px solid var(--burdeos-claro);
+    border-radius: var(--radio-card);
+    background: var(--superficie);
+    color: var(--hueso);
+    padding: 0;
+    width: min(400px, calc(100vw - 32px));
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+.dialogo::backdrop { background: rgba(10, 8, 7, 0.72); backdrop-filter: blur(3px); }
+.dialogo[open] { animation: aparecer 0.25s ease; }
+.dialogo form { padding: 30px 28px 24px; text-align: center; }
+
+.dialogo-icono {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 14px;
+    border-radius: var(--radio);
+    background: rgba(140, 42, 42, 0.22);
+    color: #E3A0A0;
+}
+
+.dialogo-icono .ico { width: 24px; height: 24px; }
+.dialogo-titulo { font-size: 1.1rem; margin-bottom: 8px; color: var(--hueso); }
+.dialogo-texto { color: var(--piedra); font-size: 0.92rem; line-height: 1.55; margin-bottom: 22px; }
+
+/* ---- Botones mientras se envía un formulario ---- */
+.btn.enviando, .btn:disabled { opacity: 0.6; cursor: progress; }
+
+/* ---- Botón dentro del menú lateral (por ejemplo "Volver") ---- */
+.sidebar button.nav-item {
+    width: 100%;
+    border: 0;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* ---- Separador para alejar las acciones destructivas ---- */
+.acciones .separador { width: 1px; height: 24px; background: var(--borde-fuerte); margin: 0 6px; }
+
+/* ---- Páginas de error ---- */
+.error-pagina {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.error-codigo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 7rem;
+    line-height: 1;
+    letter-spacing: 4px;
+    color: var(--dorado);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dialogo[open] { animation: none; }
+}
+
+/* ============================================================
+   AUDITORÍA · FASE 1B: avisos (notificaciones) y resultados
+   ============================================================ */
+
+.toasts {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(420px, calc(100vw - 36px));
+}
+
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 14px 14px 16px;
+    border-radius: var(--radio);
+    border: 1px solid;
+    background: var(--superficie);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    animation: aparecer 0.25s ease;
+}
+
+.toast .ico { width: 20px; height: 20px; margin-top: 1px; flex-shrink: 0; }
+.toast-texto { flex: 1; color: var(--hueso); }
+
+.toast-ok { border-color: rgba(94, 140, 106, 0.6); }
+.toast-ok .ico { color: #9CC5A6; }
+.toast-error { border-color: rgba(163, 51, 51, 0.7); }
+.toast-error .ico { color: #E3A0A0; }
+.toast-warn { border-color: rgba(201, 162, 39, 0.55); }
+.toast-warn .ico { color: var(--dorado); }
+
+.toast-cerrar {
+    display: grid;
+    place-items: center;
+    padding: 2px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--piedra);
+    cursor: pointer;
+}
+
+.toast-cerrar:hover { color: var(--hueso); }
+.toast-cerrar .ico { width: 16px; height: 16px; margin: 0; }
+
+.dialogo-ok .dialogo-icono { background: var(--dorado-suave); color: var(--dorado); }
+.dialogo-ok { border-top-color: var(--dorado); }
+.dialogo-texto-fuerte { color: var(--hueso); font-size: 1.02rem; font-weight: 600; }
+
+.alerta-error {
+    background: rgba(140, 42, 42, 0.18);
+    border-color: rgba(163, 51, 51, 0.55);
+    color: #E3A0A0;
+}
+
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+    .toasts { top: 70px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast { animation: none; }
+}
+
+
+/* ============================================================
+   PANTALLAS PÚBLICAS: la barra dorada del inicio pasa por detrás del contenido
+   ============================================================ */
+.hero-fondo .cortina-navaja { z-index: 1; }
+
+
+/* ============================================================
+   Campo activo: una sola línea dorada con brillo suave (antes se veían dos pegadas)
+   ============================================================ */
+.input:focus-visible,
+.select:focus-visible {
+    outline: none;
+    border-color: var(--dorado);
+    box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.28);
 }

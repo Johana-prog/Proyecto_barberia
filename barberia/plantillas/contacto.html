@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-
+{% block titulo %}Contacto - Usme Barber Top{% endblock %}
 {% block contenido %}
 <style>
     .contacto-pagina { max-width: 1000px; margin: 0 auto; padding: 48px 6% 70px; }
@@ -30,7 +30,7 @@
         display: block;
         margin-bottom: 4px;
         color: var(--piedra);
-        font-size: 0.7rem;
+        font-size: 0.76rem;
         font-weight: 700;
         letter-spacing: 1.4px;
         text-transform: uppercase;
@@ -43,83 +43,28 @@
 
     .contacto-acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
 
-    /* Mapa estilizado */
+    /* Mapa real de Google, oscurecido para que combine con el sitio */
     .mapa {
-        position: relative;
-        height: 190px;
+        height: 220px;
         margin: 6px 0 20px;
         border-radius: 12px;
         border: 1px solid var(--borde);
-        background-color: var(--carbon);
-        background-image:
-            linear-gradient(var(--borde) 1px, transparent 1px),
-            linear-gradient(90deg, var(--borde) 1px, transparent 1px);
-        background-size: 26px 26px;
+        background: var(--carbon);
         overflow: hidden;
     }
 
-    .mapa::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at center, transparent 30%, rgba(20, 18, 17, 0.85) 100%);
-    }
-
-    .mapa-pin {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        z-index: 2;
-        width: 44px;
-        height: 44px;
-        margin: -30px 0 0 -22px;
-        display: grid;
-        place-items: center;
-        border-radius: 50%;
-        color: #1A1715;
-        background: var(--dorado);
-    }
-
-    .mapa-pin .ico { width: 22px; height: 22px; stroke-width: 2; }
-
-    .mapa-pin::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        border: 2px solid var(--dorado);
-        animation: latido 2s ease-out infinite;
-    }
-
-    @keyframes latido {
-        0%   { transform: scale(1); opacity: 0.9; }
-        100% { transform: scale(2.4); opacity: 0; }
-    }
-
-    .mapa-etiqueta {
-        position: absolute;
-        left: 50%;
-        bottom: 16px;
-        z-index: 2;
-        transform: translateX(-50%);
-        padding: 6px 14px;
-        border-radius: var(--radio);
-        background: rgba(20, 18, 17, 0.88);
-        border: 1px solid var(--borde-fuerte);
-        color: var(--hueso);
-        font-size: 0.78rem;
-        font-weight: 700;
-        white-space: nowrap;
+    .mapa iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        filter: grayscale(0.2) invert(0.92) hue-rotate(180deg) contrast(0.9);
     }
 
     .sede-texto { color: var(--piedra); font-size: 0.9rem; margin-bottom: 4px; }
 
     @media (max-width: 760px) {
         .contacto-grid { grid-template-columns: 1fr; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .mapa-pin::before { animation: none; }
     }
 </style>
 
@@ -128,7 +73,6 @@
     <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
     <symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
-    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
     <symbol id="i-external" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></symbol>
 </svg>
 
@@ -150,7 +94,7 @@
             <p class="card-desc">Escríbenos o llámanos, con gusto te atendemos.</p>
 
             <div class="canal">
-                <span class="canal-icono"><svg class="ico"><use href="#i-phone"/></svg></span>
+                <span class="canal-icono" aria-hidden="true"><svg class="ico"><use href="#i-phone"/></svg></span>
                 <div>
                     <span class="canal-label">Línea telefónica</span>
                     <a href="tel:+573236214485" class="canal-valor">+57 323 6214485</a>
@@ -158,24 +102,24 @@
             </div>
 
             <div class="canal">
-                <span class="canal-icono"><svg class="ico"><use href="#i-mail"/></svg></span>
+                <span class="canal-icono" aria-hidden="true"><svg class="ico"><use href="#i-mail"/></svg></span>
                 <div>
-                    <span class="canal-label">Correo corporativo</span>
-                    <a href="mailto:soporte@usmebarbertop.com" class="canal-valor" style="font-size: 0.98rem;">soporte@usmebarbertop.com</a>
+                    <span class="canal-label">Correo</span>
+                    <a href="mailto:soporteusmebarbertop@gmail.com" class="canal-valor" style="font-size: 0.98rem;">soporteusmebarbertop@gmail.com</a>
                 </div>
             </div>
 
             <div class="canal">
-                <span class="canal-icono"><svg class="ico"><use href="#i-clock"/></svg></span>
+                <span class="canal-icono" aria-hidden="true"><svg class="ico"><use href="#i-clock"/></svg></span>
                 <div>
-                    <span class="canal-label">Horario de operación</span>
+                    <span class="canal-label">Horario de atención</span>
                     <span class="canal-texto">Lunes a sábado: 8:00 AM - 8:00 PM<br>Domingos y festivos: 9:00 AM - 4:00 PM</span>
                 </div>
             </div>
 
             <div class="contacto-acciones">
-                <a href="tel:+573236214485" class="btn btn-primario"><svg class="ico"><use href="#i-phone"/></svg>Llamar ahora</a>
-                <a href="mailto:soporte@usmebarbertop.com" class="btn btn-borde"><svg class="ico"><use href="#i-mail"/></svg>Escribir</a>
+                <a href="tel:+573236214485" class="btn btn-primario"><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg>Llamar ahora</a>
+                <a href="mailto:soporteusmebarbertop@gmail.com" class="btn btn-borde"><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg>Escribir</a>
             </div>
         </div>
 
@@ -185,12 +129,15 @@
             <p class="sede-texto">Sede principal: El Poblado, Medellín, Colombia.</p>
 
             <div class="mapa">
-                <span class="mapa-pin"><svg class="ico"><use href="#i-pin"/></svg></span>
-                <span class="mapa-etiqueta">Usme Barber Sede Medellín</span>
+                <iframe
+                    title="Mapa con la ubicación de Usme Barber Top en El Poblado, Medellín"
+                    src="https://www.google.com/maps?q=El+Poblado,+Medell%C3%ADn,+Colombia&output=embed"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
 
-            <a href="https://www.google.com/maps/search/?api=1&query=El+Poblado+Medell%C3%ADn+Colombia" target="_blank" rel="noopener" class="btn btn-borde btn-block">
-                <svg class="ico"><use href="#i-external"/></svg>Cómo llegar
+            <a href="https://www.google.com/maps/search/?api=1&query=El+Poblado+Medell%C3%ADn+Colombia" target="_blank" rel="noopener" class="btn btn-borde btn-block" aria-label="Cómo llegar, se abre en otra pestaña">
+                <svg class="ico" aria-hidden="true"><use href="#i-external"/></svg>Cómo llegar
             </a>
         </div>
 

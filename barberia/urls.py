@@ -2,9 +2,12 @@ from django.contrib import admin
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 from servicios import views
 
 urlpatterns = [
+    # La dirección sin nada más lleva al inicio
+    path('', RedirectView.as_view(pattern_name='inicio', permanent=False)),
     path('admin/', admin.site.urls),
     path('inicio/', views.inicio_barberia, name='inicio'),
     path('registro/', views.registrar_cliente, name='registro'),
@@ -21,6 +24,7 @@ urlpatterns = [
     path('acerca-de/', views.acerca_de_sena, name='acerca_de'),
     path('contacto-info/', views.pantalla_contacto, name='pantalla_contacto'),
 ]
+
 
 # Esto permite que las fotos subidas se vean en el navegador (solo modo desarrollo)
 if settings.DEBUG:

@@ -36,6 +36,17 @@ ALLOWED_HOSTS = os.environ.get(
 ).split(",")  # ✅ Tus direcciones se quedan
 
 
+# Azure App Service avisa su propia dirección web en esta variable
+AZURE_HOST = os.environ.get("WEBSITE_HOSTNAME")
+if AZURE_HOST:
+    ALLOWED_HOSTS.append(AZURE_HOST)
+
+# Direcciones desde las que se aceptan formularios (en Azure siempre es https)
+CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o]
+if AZURE_HOST:
+    CSRF_TRUSTED_ORIGINS.append("https://" + AZURE_HOST)
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -51,6 +62,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -88,13 +100,18 @@ WSGI_APPLICATION = 'barberia.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ["DB_NAME"],      # ✅ Desde la cajita
-        'USER': os.environ["DB_USER"],      # ✅ Desde la cajita
-        'PASSWORD': os.environ["DB_PASSWORD"],  # ✅ Desde la cajita
-        'HOST': os.environ["DB_HOST"],      # ✅ Desde la cajita
-        'PORT': os.environ["DB_PORT"],      # ✅ Desde la cajita
+        'NAME': os.environ["DB_NAME"],
+        'USER': os.environ["DB_USER"],
+        'PASSWORD': os.environ["DB_PASSWORD"],
+        'HOST': os.environ["DB_HOST"],
+        'PORT': os.environ["DB_PORT"],
+        'CONN_MAX_AGE': 60,   # reutiliza la conexión un minuto en vez de abrir una nueva en cada visita
     }
 }
+
+# MySQL en Azure exige conexión cifrada. En tu computador esta variable no existe y queda apagado.
+if os.environ.get("DB_SSL", "False") == "True":
+    DATABASES['default']['OPTIONS'] = {'ssl_mode': 'REQUIRED'}
 
 
 # Password validation
@@ -133,10 +150,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'   # la bodega donde collectstatic junta todos los archivos de diseño
 
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',  # ✅ Igualito que tenías
+    BASE_DIR / 'static',
 ]
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 
 # 🖼️ Configuración para guardar y mostrar fotos de perfil
 MEDIA_URL = '/media/'
@@ -146,3 +169,18 @@ MEDIA_ROOT = BASE_DIR / 'media'  # ✅ Igualito que tenías
 SESSION_COOKIE_AGE = 1800              # ✅ 30 minutos de inactividad — se queda
 SESSION_SAVE_EVERY_REQUEST = True      # ✅ cada visita renueva el reloj — se queda
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True # ✅ al cerrar el navegador, se cierra — se queda
+
+
+# 🔐 Solo se activa dentro de Azure (tu computador queda igual)
+if not DEBUG and AZURE_HOST:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Azure recibe el https y reenvía este aviso
+    SESSION_COOKIE_SECURE = True    # la sesión solo viaja por conexión cifrada
+    CSRF_COOKIE_SECURE = True
+
+# 📋 Los errores salen por consola, así los ves en el registro de Azure
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "INFO"},
+}

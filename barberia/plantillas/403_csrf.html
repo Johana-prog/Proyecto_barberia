@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesión expirada - Usme Barber Top</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background: #141211;
+            color: #F2ECE2;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            text-align: center;
+        }
+        h1 { margin: 0 0 8px; font-size: 1.6rem; }
+        p { color: #9A9288; max-width: 420px; line-height: 1.6; margin: 0 auto; }
+        .acciones { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
+        a {
+            display: inline-block;
+            padding: 12px 26px;
+            border-radius: 8px;
+            font-weight: 700;
+            text-decoration: none;
+            color: #F2ECE2;
+            border: 1px solid #4A423C;
+        }
+        a.principal { background: #8C2A2A; border-color: #8C2A2A; }
+        a:focus-visible { outline: 2px solid #C9A227; outline-offset: 2px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Tu sesión expiró</h1>
+        <p>Por seguridad, la página estuvo abierta demasiado tiempo y no pudimos guardar lo que enviaste. Vuelve a iniciar sesión e inténtalo de nuevo.</p>
+        <div class="acciones">
+            <a href="/login/" class="principal">Iniciar sesión</a>
+            <a href="/inicio/">Ir al inicio</a>
+        </div>
+    </main>
+</body>
+</html>

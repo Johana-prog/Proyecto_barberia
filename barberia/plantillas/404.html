@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Página no encontrada - Usme Barber Top{% endblock %}
+
+{% block contenido %}
+<style>
+    .error-pagina { max-width: 560px; margin: 0 auto; padding: 90px 6% 110px; text-align: center; }
+
+    .error-codigo {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 7rem;
+        letter-spacing: 4px;
+        line-height: 1;
+        color: var(--dorado);
+    }
+</style>
+
+<div class="error-pagina">
+    <div class="error-codigo" aria-hidden="true">404</div>
+    <h1 class="panel-titulo">No encontramos esta página</h1>
+    <p class="panel-subtitulo">La dirección no existe o fue movida. Puedes volver al inicio o ver nuestros estilos de corte.</p>
+    <div class="acciones centro" style="margin-top: 26px;">
+        {% if usuario_sesion %}
+            <a href="{% if usuario_sesion.rol == 'administrador' %}/dashboard-admin/{% elif usuario_sesion.rol == 'barbero' %}/panel-barbero/{% else %}/panel-cliente/{% endif %}" class="btn btn-primario">Ir a mi panel</a>
+        {% else %}
+            <a href="/inicio/" class="btn btn-primario">Ir al inicio</a>
+        {% endif %}
+        <a href="/galeria/" class="btn btn-borde">Ver estilos de corte</a>
+    </div>
+</div>
+{% endblock %}

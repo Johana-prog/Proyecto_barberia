@@ -1,0 +1,79 @@
+<dialog id="dlgConfirmar" class="dialogo" aria-labelledby="dlgConfirmarTitulo" aria-describedby="dlgConfirmarTexto">
+    <form method="dialog">
+        <div class="dialogo-icono"><svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg></div>
+        <h2 id="dlgConfirmarTitulo" class="dialogo-titulo">¿Confirmar esta acción?</h2>
+        <p id="dlgConfirmarTexto" class="dialogo-texto"></p>
+        <div class="acciones centro">
+            <button type="submit" value="no" class="btn btn-borde" autofocus>Volver</button>
+            <button type="submit" value="si" class="btn btn-peligro" id="dlgConfirmarSi">Confirmar</button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    (function () {
+        var dlg = document.getElementById('dlgConfirmar');
+        if (!dlg) { return; }
+
+        var titulo = document.getElementById('dlgConfirmarTitulo');
+        var texto = document.getElementById('dlgConfirmarTexto');
+        var botonSi = document.getElementById('dlgConfirmarSi');
+        var pendiente = null;
+
+        // Cualquier botón o enlace con data-confirmar abre el diálogo antes de actuar
+        document.addEventListener('click', function (e) {
+            var origen = e.target.closest('[data-confirmar]');
+            if (!origen) { return; }
+
+            e.preventDefault();
+            pendiente = origen;
+            titulo.textContent = origen.getAttribute('data-confirmar-titulo') || '¿Confirmar esta acción?';
+            texto.textContent = origen.getAttribute('data-confirmar');
+            botonSi.textContent = origen.getAttribute('data-confirmar-boton') || 'Confirmar';
+            dlg.returnValue = '';
+            dlg.showModal();
+        });
+
+        dlg.addEventListener('close', function () {
+            var origen = pendiente;
+            pendiente = null;
+            if (!origen) { return; }
+
+            if (dlg.returnValue !== 'si') { origen.focus(); return; }
+
+            if (origen.form) {
+                origen.form.requestSubmit(origen);
+            } else if (origen.href) {
+                window.location.href = origen.href;
+            }
+        });
+
+        // Clic fuera de la caja = cancelar
+        dlg.addEventListener('click', function (e) {
+            if (e.target === dlg) { dlg.close('no'); }
+        });
+
+        // Evita el doble envío: al enviar, se deshabilitan los botones del formulario.
+        // El setTimeout deja que el navegador lea primero qué botón se pulsó.
+        document.addEventListener('submit', function (e) {
+            var f = e.target;
+            var metodo = (f.getAttribute('method') || 'get').toLowerCase();
+            if (metodo === 'get' || metodo === 'dialog') { return; }
+
+            var botones = f.querySelectorAll('button[type="submit"], button:not([type])');
+            setTimeout(function () {
+                botones.forEach(function (b) { b.disabled = true; b.classList.add('enviando'); });
+                f.setAttribute('aria-busy', 'true');
+            }, 0);
+        });
+
+        // Si el usuario vuelve con la flecha "Atrás", se reactivan los botones
+        window.addEventListener('pageshow', function (e) {
+            if (!e.persisted) { return; }
+            document.querySelectorAll('.btn.enviando').forEach(function (b) {
+                b.disabled = false;
+                b.classList.remove('enviando');
+            });
+        });
+    })();
+</script>

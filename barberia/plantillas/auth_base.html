@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-
+{% block titulo %}Usme Barber Top{% endblock %}
 {% block contenido %}
 <style>
     .auth-fondo {
@@ -11,44 +11,16 @@
         justify-content: center;
         padding: 50px 20px;
         overflow: hidden;
-        background: #000;
-    }
-
-    .auth-fondo .carrusel-slide {
-        position: absolute;
-        inset: 0;
+        background-color: #000;
         background-size: cover;
         background-position: center;
-        opacity: 0;
-        transition: opacity 0.3s ease-in-out;
     }
-
-    .auth-fondo .carrusel-slide.activo { opacity: 1; }
 
     .auth-overlay {
         position: absolute;
         inset: 0;
         z-index: 1;
         background: linear-gradient(180deg, rgba(20, 18, 17, 0.72) 0%, rgba(20, 18, 17, 0.9) 100%);
-    }
-
-    .auth-fondo .cortina-navaja {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: -20%;
-        width: 20%;
-        z-index: 2;
-        background: var(--dorado);
-        box-shadow: 0 0 25px 5px rgba(201, 162, 39, 0.6);
-    }
-
-    .auth-fondo .cortina-navaja.deslizando { animation: authNavaja 0.9s ease-in-out; }
-
-    @keyframes authNavaja {
-        0%   { left: -20%; }
-        50%  { left: 40%; }
-        100% { left: 120%; }
     }
 
     .auth-card {
@@ -71,6 +43,8 @@
         justify-content: center;
         gap: 12px;
         margin-bottom: 22px;
+        color: inherit;
+        text-decoration: none;
     }
 
     .auth-marca-icono {
@@ -93,6 +67,8 @@
         color: var(--hueso);
     }
 
+    .auth-marca:hover .auth-marca-texto { color: var(--dorado); }
+
     .auth-titulo {
         text-align: center;
         font-size: 1.1rem;
@@ -103,22 +79,19 @@
     .auth-sub {
         text-align: center;
         color: var(--piedra);
-        font-size: 0.85rem;
+        font-size: 0.88rem;
         margin: 4px 0 24px;
     }
 
     .auth-nota {
         text-align: center;
         color: var(--piedra);
-        font-size: 0.78rem;
+        font-size: 0.82rem;
         margin: -12px 0 20px;
     }
 
-    .alerta-error {
-        background: rgba(140, 42, 42, 0.18);
-        border-color: rgba(163, 51, 51, 0.55);
-        color: #E3A0A0;
-    }
+    /* La ayuda que va debajo de un campo se alinea a la izquierda */
+    .campo .auth-nota { text-align: left; }
 
     .campo-icono { position: relative; }
 
@@ -141,14 +114,14 @@
         margin-top: 22px;
         text-align: center;
         color: var(--piedra);
-        font-size: 0.85rem;
+        font-size: 0.88rem;
         line-height: 1.9;
     }
 
     .auth-link { color: var(--dorado); font-weight: 700; }
     .auth-link:hover { color: #E0BC45 !important; }
 
-    .auth-volver { color: var(--piedra); font-size: 0.8rem; }
+    .auth-volver { color: var(--piedra); font-size: 0.85rem; }
     .auth-volver:hover { color: var(--hueso) !important; }
 
     @media (max-width: 480px) {
@@ -166,43 +139,16 @@
     <symbol id="i-id" viewBox="0 0 24 24"><path d="M16 2v2"/><path d="M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><path d="M8 2v2"/><circle cx="12" cy="11" r="3"/><rect x="3" y="4" width="18" height="18" rx="2"/></symbol>
 </svg>
 
-<div class="auth-fondo">
-    <div class="carrusel-slide activo" style="background-image: url('{% static 'imagenes/carrusel1.png' %}');"></div>
-    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel2.png' %}');"></div>
-    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel3.png' %}');"></div>
-    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel4.png' %}');"></div>
-    <div class="carrusel-slide" style="background-image: url('{% static 'imagenes/carrusel5.png' %}');"></div>
-
-    <div class="auth-overlay"></div>
-    <div class="cortina-navaja" id="cortinaNavaja"></div>
+<div class="auth-fondo" style="background-image: url('{% static 'imagenes/carrusel1.png' %}');">
+    <div class="auth-overlay" aria-hidden="true"></div>
 
     <div class="auth-card">
-        <div class="auth-marca">
-            <span class="auth-marca-icono"><svg class="ico"><use href="#i-scissors"/></svg></span>
+        <a href="/inicio/" class="auth-marca" aria-label="Usme Barber Top, ir al inicio">
+            <span class="auth-marca-icono" aria-hidden="true"><svg class="ico"><use href="#i-scissors"/></svg></span>
             <span class="auth-marca-texto">USME BARBER TOP</span>
-        </div>
+        </a>
 
         {% block formulario %}{% endblock %}
     </div>
 </div>
-
-<script>
-    (function () {
-        var slides = document.querySelectorAll('.auth-fondo .carrusel-slide');
-        var cortina = document.getElementById('cortinaNavaja');
-        if (!slides.length || !cortina) { return; }
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
-
-        var actual = 0;
-        setInterval(function () {
-            cortina.classList.add('deslizando');
-            setTimeout(function () {
-                slides[actual].classList.remove('activo');
-                actual = (actual + 1) % slides.length;
-                slides[actual].classList.add('activo');
-            }, 400);
-            setTimeout(function () { cortina.classList.remove('deslizando'); }, 900);
-        }, 4000);
-    })();
-</script>
 {% endblock %}

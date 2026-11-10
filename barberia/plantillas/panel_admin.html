@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block titulo %}Panel administrador - Usme Barber Top{% endblock %}
+
 {% block contenido %}
 <div class="panel-layout">
     {% include 'menu_lateral.html' %}
@@ -14,13 +16,9 @@
             <p class="panel-subtitulo">Gestiona citas, usuarios y tarifas desde el menú lateral.</p>
         </header>
 
-        {% if alerta %}
-            <div class="alerta {% if 'Atención' in alerta %}alerta-error{% else %}alerta-ok{% endif %}">{{ alerta }}</div>
-        {% endif %}
-
         {% if citas_pendientes_admin > 0 %}
             <a href="#citas-sec" class="aviso" onclick="abrirPestana('citas-sec','btn-citas'); abrirSubPestana('sub-pendientes','subbtn-pendientes'); return false;">
-                <svg class="ico"><use href="#i-calendar-check"/></svg>
+                <svg class="ico" aria-hidden="true"><use href="#i-calendar-check"/></svg>
                 <span>Hay <strong>{{ citas_pendientes_admin }}</strong> cita{{ citas_pendientes_admin|pluralize }} pendiente{{ citas_pendientes_admin|pluralize }} por revisar</span>
                 <span class="aviso-accion">Revisar</span>
             </a>
@@ -29,52 +27,49 @@
         <!-- ================= GESTIÓN DE CITAS ================= -->
         <div id="citas-sec" class="tab-content" style="display: block;">
 
-            <div class="stats-grid">
-                <div class="stat">
-                    <div class="stat-label">Caja financiera</div>
-                    <div class="stat-valor">${{ ingresos_totales }} <small>COP</small></div>
-                </div>
-                <div class="stat">
-                    <div class="stat-label">Cortes facturados</div>
-                    <div class="stat-valor">{{ amount_cobros }} <small>servicios</small></div>
-                </div>
-            </div>
-
             <div class="sub-tabs">
-                <button type="button" class="sub-tab-btn activo" id="subbtn-pendientes" onclick="abrirSubPestana('sub-pendientes','subbtn-pendientes')">Pendientes <span class="num">{{ citas_pendientes|length }}</span></button>
-                <button type="button" class="sub-tab-btn" id="subbtn-confirmadas" onclick="abrirSubPestana('sub-confirmadas','subbtn-confirmadas')">Confirmadas <span class="num">{{ citas_confirmadas|length }}</span></button>
-                <button type="button" class="sub-tab-btn" id="subbtn-canceladas" onclick="abrirSubPestana('sub-canceladas','subbtn-canceladas')">Canceladas <span class="num">{{ citas_canceladas|length }}</span></button>
-                <button type="button" class="sub-tab-btn" id="subbtn-finalizadas" onclick="abrirSubPestana('sub-finalizadas','subbtn-finalizadas')">Finalizadas <span class="num">{{ citas_finalizadas|length }}</span></button>
+                <button type="button" class="sub-tab-btn activo" id="subbtn-pendientes" aria-pressed="true" onclick="abrirSubPestana('sub-pendientes','subbtn-pendientes')">Pendientes <span class="num">{{ citas_pendientes|length }}</span></button>
+                <button type="button" class="sub-tab-btn" id="subbtn-confirmadas" aria-pressed="false" onclick="abrirSubPestana('sub-confirmadas','subbtn-confirmadas')">Confirmadas <span class="num">{{ citas_confirmadas|length }}</span></button>
+                <button type="button" class="sub-tab-btn" id="subbtn-atendidas" aria-pressed="false" onclick="abrirSubPestana('sub-atendidas','subbtn-atendidas')">Atendidas <span class="num">{{ citas_atendidas|length }}</span></button>
+                <button type="button" class="sub-tab-btn" id="subbtn-canceladas" aria-pressed="false" onclick="abrirSubPestana('sub-canceladas','subbtn-canceladas')">Canceladas <span class="num">{{ citas_canceladas|length }}</span></button>
             </div>
 
-            <!-- Pendientes (con acciones) -->
+            <!-- Pendientes: se pueden confirmar o cancelar -->
             <div id="sub-pendientes" class="sub-tab-content" style="display: block;">
                 <div class="card">
                     <div class="tabla-wrap">
                     <table class="tabla">
                         <thead>
-                            <tr><th>ID</th><th>Fecha</th><th>Hora</th><th>Servicio</th><th class="centro">Acciones</th></tr>
+                            <tr><th>Cliente</th><th>Barbero</th><th>Fecha y hora</th><th>Servicio</th><th>Precio</th><th class="centro">Acciones</th></tr>
                         </thead>
                         <tbody>
                             {% for c in citas_pendientes %}
                                 <tr>
-                                    <td>#{{ c.id_cita }}</td>
-                                    <td>{{ c.fecha }}</td>
-                                    <td>{{ c.hora }}</td>
+                                    <td>{{ c.id_cliente.nombre }} {{ c.id_cliente.apellido }}</td>
+                                    <td>{{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</td>
+                                    <td>{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</td>
                                     <td>{{ c.nombre_limpio_servicio }}</td>
+                                    <td>{% if c.precio_mostrar %}${{ c.precio_mostrar|floatformat:"0g" }}{% else %}—{% endif %}</td>
                                     <td>
                                         <div class="acciones centro">
                                             <form method="POST">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
-                                                <button type="submit" name="aceptar_cita" class="btn btn-primario btn-sm"><svg class="ico"><use href="#i-scissors"/></svg>Aceptar</button>
-                                                <button type="submit" name="cancelar_cita" class="btn btn-borde btn-sm">Cancelar</button>
+                                                <button type="submit" name="confirmar_cita" class="btn btn-primario btn-sm"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Confirmar</button>
+                                            </form>
+                                            <form method="POST" style="margin-left: 16px;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
+                                                <button type="submit" name="cancelar_cita" class="btn btn-borde btn-sm"
+                                                        data-confirmar="La cita de {{ c.id_cliente.nombre }} ({{ c.nombre_limpio_servicio }}, {{ c.fecha|date:'j \d\e F' }} a las {{ c.hora|time:'g:i A' }}) se cancelará y el horario quedará libre otra vez."
+                                                        data-confirmar-titulo="¿Cancelar esta cita?"
+                                                        data-confirmar-boton="Sí, cancelar">Cancelar</button>
                                             </form>
                                         </div>
                                     </td>
                                 </tr>
                             {% empty %}
-                                <tr><td colspan="5" class="tabla-vacia">No hay citas pendientes.</td></tr>
+                                <tr><td colspan="6" class="tabla-vacia">No hay citas pendientes.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -82,17 +77,37 @@
                 </div>
             </div>
 
-            <!-- Confirmadas -->
+            <!-- Confirmadas: también se pueden cancelar -->
             <div id="sub-confirmadas" class="sub-tab-content" style="display: none;">
                 <div class="card">
                     <div class="tabla-wrap">
                     <table class="tabla">
-                        <thead><tr><th>ID</th><th>Fecha</th><th>Hora</th><th>Servicio</th></tr></thead>
+                        <thead>
+                            <tr><th>Cliente</th><th>Barbero</th><th>Fecha y hora</th><th>Servicio</th><th>Precio</th><th class="centro">Acciones</th></tr>
+                        </thead>
                         <tbody>
                             {% for c in citas_confirmadas %}
-                                <tr><td>#{{ c.id_cita }}</td><td>{{ c.fecha }}</td><td>{{ c.hora }}</td><td>{{ c.nombre_limpio_servicio }}</td></tr>
+                                <tr>
+                                    <td>{{ c.id_cliente.nombre }} {{ c.id_cliente.apellido }}</td>
+                                    <td>{{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</td>
+                                    <td>{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</td>
+                                    <td>{{ c.nombre_limpio_servicio }}</td>
+                                    <td>{% if c.precio_mostrar %}${{ c.precio_mostrar|floatformat:"0g" }}{% else %}—{% endif %}</td>
+                                    <td>
+                                        <div class="acciones centro">
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
+                                                <button type="submit" name="cancelar_cita" class="btn btn-borde btn-sm"
+                                                        data-confirmar="La cita de {{ c.id_cliente.nombre }} ({{ c.nombre_limpio_servicio }}, {{ c.fecha|date:'j \d\e F' }} a las {{ c.hora|time:'g:i A' }}) se cancelará y el horario quedará libre otra vez."
+                                                        data-confirmar-titulo="¿Cancelar esta cita?"
+                                                        data-confirmar-boton="Sí, cancelar">Cancelar</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
                             {% empty %}
-                                <tr><td colspan="4" class="tabla-vacia">No hay citas confirmadas.</td></tr>
+                                <tr><td colspan="6" class="tabla-vacia">No hay citas confirmadas.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -100,35 +115,51 @@
                 </div>
             </div>
 
-            <!-- Canceladas -->
+            <!-- Atendidas (las más recientes primero) -->
+            <div id="sub-atendidas" class="sub-tab-content" style="display: none;">
+                <div class="card">
+                    <div class="tabla-wrap">
+                    <table class="tabla">
+                        <thead>
+                            <tr><th>Cliente</th><th>Barbero</th><th>Fecha y hora</th><th>Servicio</th><th>Precio</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for c in citas_atendidas reversed %}
+                                <tr>
+                                    <td>{{ c.id_cliente.nombre }} {{ c.id_cliente.apellido }}</td>
+                                    <td>{{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</td>
+                                    <td>{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</td>
+                                    <td>{{ c.nombre_limpio_servicio }}</td>
+                                    <td>{% if c.precio_mostrar %}${{ c.precio_mostrar|floatformat:"0g" }}{% else %}—{% endif %}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="5" class="tabla-vacia">No hay citas atendidas.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canceladas (las más recientes primero) -->
             <div id="sub-canceladas" class="sub-tab-content" style="display: none;">
                 <div class="card">
                     <div class="tabla-wrap">
                     <table class="tabla">
-                        <thead><tr><th>ID</th><th>Fecha</th><th>Hora</th><th>Servicio</th></tr></thead>
+                        <thead>
+                            <tr><th>Cliente</th><th>Barbero</th><th>Fecha y hora</th><th>Servicio</th><th>Precio</th></tr>
+                        </thead>
                         <tbody>
-                            {% for c in citas_canceladas %}
-                                <tr><td>#{{ c.id_cita }}</td><td>{{ c.fecha }}</td><td>{{ c.hora }}</td><td>{{ c.nombre_limpio_servicio }}</td></tr>
+                            {% for c in citas_canceladas reversed %}
+                                <tr>
+                                    <td>{{ c.id_cliente.nombre }} {{ c.id_cliente.apellido }}</td>
+                                    <td>{{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</td>
+                                    <td>{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</td>
+                                    <td>{{ c.nombre_limpio_servicio }}</td>
+                                    <td>{% if c.precio_mostrar %}${{ c.precio_mostrar|floatformat:"0g" }}{% else %}—{% endif %}</td>
+                                </tr>
                             {% empty %}
-                                <tr><td colspan="4" class="tabla-vacia">No hay citas canceladas.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Finalizadas -->
-            <div id="sub-finalizadas" class="sub-tab-content" style="display: none;">
-                <div class="card">
-                    <div class="tabla-wrap">
-                    <table class="tabla">
-                        <thead><tr><th>ID</th><th>Fecha</th><th>Hora</th><th>Servicio</th></tr></thead>
-                        <tbody>
-                            {% for c in citas_finalizadas %}
-                                <tr><td>#{{ c.id_cita }}</td><td>{{ c.fecha }}</td><td>{{ c.hora }}</td><td>{{ c.nombre_limpio_servicio }}</td></tr>
-                            {% empty %}
-                                <tr><td colspan="4" class="tabla-vacia">No hay citas finalizadas.</td></tr>
+                                <tr><td colspan="5" class="tabla-vacia">No hay citas canceladas.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -141,32 +172,55 @@
         <!-- ================= CONTROL DE USUARIOS ================= -->
         <div id="usuarios-sec" class="tab-content" style="display: none;">
             <div class="card">
-                <div class="card-titulo"><svg class="ico"><use href="#i-users"/></svg>Control de usuarios</div>
-                <p class="card-desc">Cambia el rol de cada persona. Quien se registra entra como cliente.</p>
+                <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg>Control de usuarios</div>
+                <p class="card-desc">Cambia el rol de cada persona o desactiva su cuenta. Quien se registra entra como cliente. Al desactivar a alguien no se pierde su historial y puedes reactivarlo cuando quieras.</p>
                 <div class="tabla-wrap">
                 <table class="tabla">
                     <thead>
-                        <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th class="centro">Acciones</th></tr>
+                        <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th class="centro">Acciones</th></tr>
                     </thead>
                     <tbody>
                         {% for u in usuarios %}
                             <tr>
                                 <td>{{ u.nombre }} {{ u.apellido }}</td>
                                 <td class="tenue">{{ u.correo }}</td>
-                                <td><span class="rol">{{ u.rol }}</span></td>
+                                <td><span class="rol">{{ u.rol|capfirst }}</span></td>
+                                <td>
+                                    {% if u.estado == 0 %}
+                                        <span class="badge badge-cancelada">Desactivada</span>
+                                    {% else %}
+                                        <span class="badge badge-confirmada">Activa</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <div class="acciones centro">
-                                        <form method="POST">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="id_usuario" value="{{ u.id_usuario }}">
-                                            <select name="nuevo_rol" class="select input-sm">
-                                                <option value="cliente" {% if u.rol == 'cliente' %}selected{% endif %}>Cliente</option>
-                                                <option value="barbero" {% if u.rol == 'barbero' %}selected{% endif %}>Barbero</option>
-                                                <option value="administrador" {% if u.rol == 'administrador' %}selected{% endif %}>Admin</option>
-                                            </select>
-                                            <button type="submit" name="cambiar_rol" class="btn btn-borde btn-sm">Guardar</button>
-                                            <button type="submit" name="eliminar_usuario" class="btn btn-peligro btn-sm" onclick="return confirm('¿Seguro que deseas eliminar permanentemente a este usuario?');">Eliminar</button>
-                                        </form>
+                                        {% if u.id_usuario == yo_id %}
+                                            <span class="tenue">Tu cuenta</span>
+                                        {% else %}
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="id_usuario" value="{{ u.id_usuario }}">
+                                                <select name="nuevo_rol" class="select input-sm" aria-label="Rol de {{ u.nombre }} {{ u.apellido }}">
+                                                    <option value="cliente" {% if u.rol == 'cliente' %}selected{% endif %}>Cliente</option>
+                                                    <option value="barbero" {% if u.rol == 'barbero' %}selected{% endif %}>Barbero</option>
+                                                    <option value="administrador" {% if u.rol == 'administrador' %}selected{% endif %}>Administrador</option>
+                                                </select>
+                                                <button type="submit" name="cambiar_rol" class="btn btn-borde btn-sm">Guardar</button>
+                                            </form>
+
+                                            <form method="POST" style="margin-left: 16px;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="id_usuario" value="{{ u.id_usuario }}">
+                                                {% if u.estado == 0 %}
+                                                    <button type="submit" name="activar_usuario" class="btn btn-primario btn-sm">Activar</button>
+                                                {% else %}
+                                                    <button type="submit" name="desactivar_usuario" class="btn btn-peligro btn-sm"
+                                                            data-confirmar="{{ u.nombre }} {{ u.apellido }} ya no podrá iniciar sesión hasta que reactives su cuenta. Su historial se conserva."
+                                                            data-confirmar-titulo="¿Desactivar esta cuenta?"
+                                                            data-confirmar-boton="Sí, desactivar">Desactivar</button>
+                                                {% endif %}
+                                            </form>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>
@@ -176,33 +230,35 @@
                 </div>
             </div>
         </div>
+
         {% include 'admin_estadisticas.html' %}
+
         <!-- ================= TARIFAS Y SERVICIOS ================= -->
         <div id="servicios-sec" class="tab-content" style="display: none;">
 
             <div class="card">
-                <div class="card-titulo"><svg class="ico"><use href="#i-scissors"/></svg>Agregar nuevo servicio</div>
-                <p class="card-desc">Aparecerá al instante en Inicio, en Agendar Cita y en el portafolio de los barberos.</p>
+                <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>Agregar nuevo servicio</div>
+                <p class="card-desc">Aparecerá al instante en Inicio, en Solicitar turno y en el portafolio de los barberos.</p>
                 <form method="POST" class="fila-form">
                     {% csrf_token %}
                     <div class="campo" style="flex: 1; min-width: 160px;">
-                        <label>Nombre</label>
-                        <input type="text" name="nombre_nuevo_servicio" class="input" required>
+                        <label for="nombre_nuevo_servicio">Nombre</label>
+                        <input type="text" id="nombre_nuevo_servicio" name="nombre_nuevo_servicio" class="input" required>
                     </div>
                     <div class="campo" style="flex: 2; min-width: 220px;">
-                        <label>Descripción corta</label>
-                        <input type="text" name="descripcion_nuevo_servicio" class="input" required>
+                        <label for="descripcion_nuevo_servicio">Descripción corta</label>
+                        <input type="text" id="descripcion_nuevo_servicio" name="descripcion_nuevo_servicio" class="input" required>
                     </div>
                     <div class="campo" style="width: 130px;">
-                        <label>Precio</label>
-                        <input type="number" name="precio_nuevo_servicio" class="input" required step="500" min="0">
+                        <label for="precio_nuevo_servicio">Precio (COP)</label>
+                        <input type="number" id="precio_nuevo_servicio" name="precio_nuevo_servicio" class="input" required step="500" min="0">
                     </div>
-                    <button type="submit" name="agregar_servicio" class="btn btn-primario" style="height: 42px;"><svg class="ico"><use href="#i-scissors"/></svg>Crear servicio</button>
+                    <button type="submit" name="agregar_servicio" class="btn btn-primario" style="height: 42px;"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Crear servicio</button>
                 </form>
             </div>
 
             <div class="card">
-                <div class="card-titulo"><svg class="ico"><use href="#i-banknote"/></svg>Tarifas actuales</div>
+                <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-banknote"/></svg>Tarifas actuales</div>
                 <div class="tabla-wrap">
                 <table class="tabla">
                     <thead>
@@ -218,7 +274,7 @@
                                         <form method="POST">
                                             {% csrf_token %}
                                             <input type="hidden" name="id_servicio" value="{{ s.id_servicio }}">
-                                            <input type="number" name="nuevo_precio" value="{{ s.precio|floatformat:'0' }}" step="500" min="0" class="input input-sm" style="width: 110px;">
+                                            <input type="number" name="nuevo_precio" value="{{ s.precio|floatformat:'0' }}" step="500" min="0" class="input input-sm" style="width: 110px;" aria-label="Nuevo precio de {{ s.nombre_servicio }}">
                                             <button type="submit" name="actualizar_precio" class="btn btn-borde btn-sm">Guardar</button>
                                         </form>
                                     </div>
@@ -235,38 +291,43 @@
     </main>
 </div>
 
-<!-- Ventana emergente de confirmación -->
-<div id="modalCitaOverlay" class="modal-overlay">
-    <div class="modal-caja">
-        <div class="modal-icono"><svg class="ico"><use href="#i-scissors"/></svg></div>
-        <p id="modalCitaTexto"></p>
-        <button type="button" class="btn btn-primario" onclick="document.getElementById('modalCitaOverlay').style.display='none';">OK</button>
-    </div>
-</div>
-
 <script>
     function abrirPestana(idSeccion, idBoton) {
         document.querySelectorAll('.tab-content').forEach(function (sec) { sec.style.display = 'none'; });
-        document.getElementById(idSeccion).style.display = 'block';
+        var seccion = document.getElementById(idSeccion);
+        if (seccion) { seccion.style.display = 'block'; }
         history.replaceState(null, '', '#' + idSeccion);
     }
 
     function abrirSubPestana(idSeccion, idBoton) {
         document.querySelectorAll('.sub-tab-content').forEach(function (sec) { sec.style.display = 'none'; });
-        document.querySelectorAll('.sub-tab-btn').forEach(function (btn) { btn.classList.remove('activo'); });
+        document.querySelectorAll('.sub-tab-btn').forEach(function (btn) {
+            btn.classList.remove('activo');
+            btn.setAttribute('aria-pressed', 'false');
+        });
         document.getElementById(idSeccion).style.display = 'block';
-        document.getElementById(idBoton).classList.add('activo');
+        var boton = document.getElementById(idBoton);
+        boton.classList.add('activo');
+        boton.setAttribute('aria-pressed', 'true');
+
+        // Se recuerda la sub-pestaña para que, al recargar, no vuelva siempre a «Pendientes»
+        try { sessionStorage.setItem('adminSubPestana', idSeccion + '|' + idBoton); } catch (e) {}
     }
 
     window.addEventListener('DOMContentLoaded', function () {
         var hash = window.location.hash.replace('#', '');
-        var mapa = { 'citas-sec': 'btn-citas', 'usuarios-sec': 'btn-usuarios', 'servicios-sec': 'btn-servicios' };
-        if (hash && mapa[hash]) { abrirPestana(hash, mapa[hash]); }
+        var destino = hash ? document.getElementById(hash) : null;
+        if (destino && destino.classList.contains('tab-content')) { abrirPestana(hash, ''); }
 
-        {% if alerta_modal %}
-            document.getElementById('modalCitaTexto').innerText = "{{ alerta_modal|escapejs }}";
-            document.getElementById('modalCitaOverlay').style.display = 'flex';
-        {% endif %}
+        try {
+            var guardada = sessionStorage.getItem('adminSubPestana');
+            if (guardada) {
+                var partes = guardada.split('|');
+                if (document.getElementById(partes[0]) && document.getElementById(partes[1])) {
+                    abrirSubPestana(partes[0], partes[1]);
+                }
+            }
+        } catch (e) {}
     });
 </script>
 {% endblock %}

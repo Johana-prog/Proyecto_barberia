@@ -1,0 +1,27 @@
+{% if messages %}
+    <div class="toasts" aria-live="polite">
+        {% for m in messages %}
+            <div class="toast {% if m.level_tag == 'error' %}toast-error{% elif m.level_tag == 'warning' %}toast-warn{% else %}toast-ok{% endif %}"
+                 role="{% if m.level_tag == 'error' or m.level_tag == 'warning' %}alert{% else %}status{% endif %}"
+                 {% if m.level_tag == 'success' or m.level_tag == 'info' %}data-autocerrar{% endif %}>
+                <svg class="ico" aria-hidden="true"><use href="{% if m.level_tag == 'error' or m.level_tag == 'warning' %}#i-alert{% else %}#i-check{% endif %}"/></svg>
+                <span class="toast-texto">{{ m.message }}</span>
+                <button type="button" class="toast-cerrar" aria-label="Cerrar aviso"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        (function () {
+            document.querySelectorAll('.toast').forEach(function (aviso) {
+                var cerrar = aviso.querySelector('.toast-cerrar');
+                if (cerrar) { cerrar.addEventListener('click', function () { aviso.remove(); }); }
+
+                // Los éxitos se cierran solos; los errores se quedan hasta que la persona los cierre
+                if (aviso.hasAttribute('data-autocerrar')) {
+                    setTimeout(function () { aviso.remove(); }, 10000);
+                }
+            });
+        })();
+    </script>
+{% endif %}
