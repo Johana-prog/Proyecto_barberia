@@ -307,24 +307,31 @@ def panel_cliente(request):
         .exclude(observaciones=LIBRE)
     )
 
-    proximas, historial = [], []
+    proximas, atendidas, canceladas, vencidas = [], [], [], []
     for c in citas:
         preparar_cita(c)
         activa = c.estado in ('pendiente', 'confirmada')
         c.puede_cancelar = activa and (momento_cita(c) - ahora >= datetime.timedelta(hours=HORAS_MIN_CANCELAR))
-        if activa and momento_cita(c) >= ahora:
+        if c.estado == 'atendida':
+            atendidas.append(c)
+        elif c.estado == 'cancelada':
+            canceladas.append(c)
+        elif momento_cita(c) >= ahora:
             proximas.append(c)
         else:
-            historial.append(c)
+            vencidas.append(c)
 
     proximas.sort(key=momento_cita)
-    historial.sort(key=momento_cita, reverse=True)
+    for lista in (atendidas, canceladas, vencidas):
+        lista.sort(key=momento_cita, reverse=True)
 
     return render(request, 'panel_cliente.html', {
         "cliente": usuario.nombre,
-        "citas": proximas + historial,
         "proximas": proximas,
-        "historial": historial,
+        "atendidas": atendidas,
+        "canceladas": canceladas,
+        "vencidas": vencidas,
+        "estadisticas": estadisticas_cliente(citas),
         "servicios": Servicio.objects.all(),
         "horas_cancelar": HORAS_MIN_CANCELAR,
         "sesion_activa": True,

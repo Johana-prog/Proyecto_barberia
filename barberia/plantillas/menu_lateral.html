@@ -46,6 +46,9 @@
             <a href="/asistente/" class="nav-item" data-path="/asistente/" data-default="1">
                 <svg class="ico" aria-hidden="true"><use href="#i-spark"/></svg><span class="sb-texto">Asistente de Estilo</span>
             </a>
+                        <a href="/panel-cliente/#estadisticas-sec" id="btn-estadisticas" class="nav-item" data-path="/panel-cliente/" data-hash="#estadisticas-sec" onclick="return cambiarPestanaLateral('estadisticas-sec','btn-estadisticas')">
+                <svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg><span class="sb-texto">Mis Estadísticas</span>
+            </a>
 
         {% elif usuario_sesion.rol == 'barbero' %}
             <a href="/panel-barbero/#agenda-sec" id="btn-agenda" class="nav-item b-tab-btn" data-path="/panel-barbero/" data-hash="#agenda-sec" data-default="1" onclick="return cambiarPestanaLateral('agenda-sec','btn-agenda')">

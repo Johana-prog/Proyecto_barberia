@@ -13,90 +13,196 @@
         <header class="panel-header">
             <div class="panel-eyebrow">Mi cuenta</div>
             <h1 class="panel-titulo">Hola, {{ usuario_sesion.nombre|title }}</h1>
-            <p class="panel-subtitulo">Revisa el estado de tus citas y consulta nuestras tarifas.</p>
+            <p class="panel-subtitulo">Revisa el estado de tus citas, tus estadísticas y nuestras tarifas.</p>
         </header>
 
-        <div class="card">
-            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-calendar-check"/></svg>Próximas citas</div>
-            <p class="card-desc">Puedes cancelar hasta {{ horas_cancelar }} horas antes; el horario queda libre para otras personas.</p>
-            <div class="lista-citas">
-                {% for c in proximas %}
-                    <div class="cita-item">
-                        <div>
-                            <div class="cita-fecha">{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</div>
-                            <div class="cita-servicio">
-                                <svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>
-                                {{ c.nombre_limpio_servicio }}{% if c.precio_mostrar %} · ${{ c.precio_mostrar|floatformat:"0g" }}{% endif %}
-                            </div>
-                            <p class="card-desc" style="margin: 4px 0 0;">Con {{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</p>
-                        </div>
-                        <div style="text-align: right;">
-                            <span class="badge badge-{{ c.estado }}">{{ c.estado|capfirst }}</span>
+        <!-- ================= MI AGENDA (por estado) ================= -->
+        <div id="agenda-sec" class="cliente-tab-content" style="display: block;">
 
-                            {% if c.puede_cancelar %}
-                                <form method="post" style="margin-top: 8px;">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
-                                    <button type="submit" name="cancelar_mi_cita" class="btn btn-borde btn-sm"
-                                            data-confirmar="Tu cita de {{ c.nombre_limpio_servicio }} del {{ c.fecha|date:'j \d\e F' }} a las {{ c.hora|time:'g:i A' }} se cancelará y el horario quedará libre para otras personas."
-                                            data-confirmar-titulo="¿Cancelar esta cita?"
-                                            data-confirmar-boton="Sí, cancelar">Cancelar cita</button>
-                                </form>
-                            {% else %}
-                                <p class="card-desc" style="margin: 8px 0 0;">Ya no se puede cancelar desde aquí. Comunícate con la barbería.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% empty %}
-                    <div class="vacio">
-                        No tienes citas próximas.<br>
-                        <a href="/agendar/" class="btn btn-primario" style="margin-top:12px; display:inline-block;">
-                            <svg class="ico" aria-hidden="true"><use href="#i-calendar-plus"/></svg>Solicitar turno
-                        </a>
-                    </div>
-                {% endfor %}
+            <div class="sub-tabs">
+                <button type="button" class="sub-tab-btn activo" id="csubbtn-proximas" aria-pressed="true" onclick="abrirSubPestanaCliente('csub-proximas','csubbtn-proximas')">Próximas <span class="num">{{ proximas|length }}</span></button>
+                <button type="button" class="sub-tab-btn" id="csubbtn-atendidas" aria-pressed="false" onclick="abrirSubPestanaCliente('csub-atendidas','csubbtn-atendidas')">Atendidas <span class="num">{{ atendidas|length }}</span></button>
+                <button type="button" class="sub-tab-btn" id="csubbtn-canceladas" aria-pressed="false" onclick="abrirSubPestanaCliente('csub-canceladas','csubbtn-canceladas')">Canceladas <span class="num">{{ canceladas|length }}</span></button>
+                <button type="button" class="sub-tab-btn" id="csubbtn-vencidas" aria-pressed="false" onclick="abrirSubPestanaCliente('csub-vencidas','csubbtn-vencidas')">Vencidas <span class="num">{{ vencidas|length }}</span></button>
             </div>
+
+            <!-- Próximas -->
+            <div id="csub-proximas" class="csub-tab-content" style="display: block;">
+                <div class="card">
+                    <p class="card-desc">Puedes cancelar hasta {{ horas_cancelar }} horas antes; el horario queda libre para otras personas.</p>
+                    <div class="lista-citas">
+                        {% for c in proximas %}
+                            <div class="cita-item">
+                                <div>
+                                    <div class="cita-fecha">{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</div>
+                                    <div class="cita-servicio">
+                                        <svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>
+                                        {{ c.nombre_limpio_servicio }}{% if c.precio_mostrar %} · ${{ c.precio_mostrar|floatformat:"0g" }}{% endif %}
+                                    </div>
+                                    <p class="card-desc" style="margin: 4px 0 0;">Con {{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span class="badge badge-{{ c.estado }}">{{ c.estado|capfirst }}</span>
+
+                                    {% if c.puede_cancelar %}
+                                        <form method="post" style="margin-top: 8px;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
+                                            <button type="submit" name="cancelar_mi_cita" class="btn btn-borde btn-sm"
+                                                    data-confirmar="Tu cita de {{ c.nombre_limpio_servicio }} del {{ c.fecha|date:'j \d\e F' }} a las {{ c.hora|time:'g:i A' }} se cancelará y el horario quedará libre para otras personas."
+                                                    data-confirmar-titulo="¿Cancelar esta cita?"
+                                                    data-confirmar-boton="Sí, cancelar">Cancelar cita</button>
+                                        </form>
+                                    {% else %}
+                                        <p class="card-desc" style="margin: 8px 0 0;">Ya no se puede cancelar desde aquí. Comunícate con la barbería.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="vacio">
+                                No tienes citas próximas.<br>
+                                <a href="/agendar/" class="btn btn-primario" style="margin-top:12px; display:inline-block;">
+                                    <svg class="ico" aria-hidden="true"><use href="#i-calendar-plus"/></svg>Solicitar turno
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Atendidas -->
+            <div id="csub-atendidas" class="csub-tab-content" style="display: none;">
+                <div class="card">
+                    <p class="card-desc">Las citas en las que ya te atendimos, de la más reciente a la más antigua.</p>
+                    <div class="lista-citas">
+                        {% for c in atendidas %}
+                            <div class="cita-item">
+                                <div>
+                                    <div class="cita-fecha">{{ c.fecha|date:"D j M Y" }} · {{ c.hora|time:"g:i A" }}</div>
+                                    <div class="cita-servicio">
+                                        <svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>
+                                        {{ c.nombre_limpio_servicio }}{% if c.precio_mostrar %} · ${{ c.precio_mostrar|floatformat:"0g" }}{% endif %}
+                                    </div>
+                                    <p class="card-desc" style="margin: 4px 0 0;">Con {{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</p>
+                                </div>
+                                <div style="text-align: right;"><span class="badge badge-atendida">Atendida</span></div>
+                            </div>
+                        {% empty %}
+                            <div class="vacio">Todavía no tienes citas atendidas.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canceladas -->
+            <div id="csub-canceladas" class="csub-tab-content" style="display: none;">
+                <div class="card">
+                    <p class="card-desc">Citas que cancelaste tú o la barbería, de la más reciente a la más antigua.</p>
+                    <div class="lista-citas">
+                        {% for c in canceladas %}
+                            <div class="cita-item">
+                                <div>
+                                    <div class="cita-fecha">{{ c.fecha|date:"D j M Y" }} · {{ c.hora|time:"g:i A" }}</div>
+                                    <div class="cita-servicio">
+                                        <svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>
+                                        {{ c.nombre_limpio_servicio }}
+                                    </div>
+                                    <p class="card-desc" style="margin: 4px 0 0;">Con {{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</p>
+                                </div>
+                                <div style="text-align: right;"><span class="badge badge-cancelada">Cancelada</span></div>
+                            </div>
+                        {% empty %}
+                            <div class="vacio">No tienes citas canceladas.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vencidas -->
+            <div id="csub-vencidas" class="csub-tab-content" style="display: none;">
+                <div class="card">
+                    <p class="card-desc">Citas cuya fecha ya pasó sin que se atendieran ni se cancelaran.</p>
+                    <div class="lista-citas">
+                        {% for c in vencidas %}
+                            <div class="cita-item">
+                                <div>
+                                    <div class="cita-fecha">{{ c.fecha|date:"D j M Y" }} · {{ c.hora|time:"g:i A" }}</div>
+                                    <div class="cita-servicio">
+                                        <svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>
+                                        {{ c.nombre_limpio_servicio }}
+                                    </div>
+                                    <p class="card-desc" style="margin: 4px 0 0;">Con {{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</p>
+                                </div>
+                                <div style="text-align: right;"><span class="badge badge-libre">Vencida</span></div>
+                            </div>
+                        {% empty %}
+                            <div class="vacio">No tienes citas vencidas.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-banknote"/></svg>Nuestros servicios y tarifas</div>
+                <div class="lista-precios" style="margin-top: 12px;">
+                    {% for s in servicios %}
+                        <div class="fila">
+                            <span>{{ s.nombre_servicio }}</span>
+                            <span class="precio">${{ s.precio|floatformat:"0g" }} COP</span>
+                        </div>
+                    {% empty %}
+                        <div class="vacio">Aún no hay servicios publicados.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
         </div>
 
-        {% if historial %}
-        <div class="card">
-            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-calendar-check"/></svg>Historial</div>
-            <p class="card-desc">Tus citas pasadas y canceladas.</p>
-            <div class="lista-citas">
-                {% for c in historial %}
-                    <div class="cita-item">
-                        <div>
-                            <div class="cita-fecha">{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</div>
-                            <div class="cita-servicio">
-                                <svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>
-                                {{ c.nombre_limpio_servicio }}
-                            </div>
-                            <p class="card-desc" style="margin: 4px 0 0;">Con {{ c.id_barbero.id_usuario.nombre }} {{ c.id_barbero.id_usuario.apellido }}</p>
-                        </div>
-                        <div style="text-align: right;">
-                            <span class="badge badge-{{ c.estado }}">{{ c.estado|capfirst }}</span>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="card">
-            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-banknote"/></svg>Nuestros servicios y tarifas</div>
-            <div class="lista-precios" style="margin-top: 12px;">
-                {% for s in servicios %}
-                    <div class="fila">
-                        <span>{{ s.nombre_servicio }}</span>
-                        <span class="precio">${{ s.precio|floatformat:"0g" }} COP</span>
-                    </div>
-                {% empty %}
-                    <div class="vacio">Aún no hay servicios publicados.</div>
-                {% endfor %}
-            </div>
+        <!-- ================= MIS ESTADÍSTICAS ================= -->
+        <div id="estadisticas-sec" class="cliente-tab-content" style="display: none;">
+            {% include '_mis_estadisticas.html' %}
         </div>
 
     </div>
     </main>
 </div>
+
+<script>
+    // El menú lateral usa este nombre para cambiar de sección
+    function abrirPestana(idSeccion, idBoton) {
+        document.querySelectorAll('.cliente-tab-content').forEach(function (sec) { sec.style.display = 'none'; });
+        var seccion = document.getElementById(idSeccion);
+        if (seccion) { seccion.style.display = 'block'; }
+        history.replaceState(null, '', '#' + idSeccion);
+    }
+
+    function abrirSubPestanaCliente(idSeccion, idBoton) {
+        document.querySelectorAll('.csub-tab-content').forEach(function (sec) { sec.style.display = 'none'; });
+        document.querySelectorAll('.sub-tab-btn').forEach(function (btn) {
+            btn.classList.remove('activo');
+            btn.setAttribute('aria-pressed', 'false');
+        });
+        document.getElementById(idSeccion).style.display = 'block';
+        var boton = document.getElementById(idBoton);
+        boton.classList.add('activo');
+        boton.setAttribute('aria-pressed', 'true');
+
+        // Se recuerda la pestaña para que, al recargar, no vuelva siempre a «Próximas»
+        try { sessionStorage.setItem('clienteSubPestana', idSeccion + '|' + idBoton); } catch (e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+        if (window.location.hash === '#estadisticas-sec') { abrirPestana('estadisticas-sec', 'btn-estadisticas'); }
+
+        try {
+            var guardada = sessionStorage.getItem('clienteSubPestana');
+            if (guardada) {
+                var partes = guardada.split('|');
+                if (document.getElementById(partes[0]) && document.getElementById(partes[1])) {
+                    abrirSubPestanaCliente(partes[0], partes[1]);
+                }
+            }
+        } catch (e) {}
+    });
+</script>
 {% endblock %}
