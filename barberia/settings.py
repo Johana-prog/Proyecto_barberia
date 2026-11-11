@@ -157,7 +157,14 @@ STATICFILES_DIRS = [
 ]
 
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "default": {
+        # Con CLOUDINARY_URL definida, las fotos van a Cloudinary; sin ella, a la carpeta media/
+        "BACKEND": (
+            "servicios.storage.CloudinaryMediaStorage"
+            if os.environ.get("CLOUDINARY_URL")
+            else "django.core.files.storage.FileSystemStorage"
+        ),
+    },
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
 }
 
