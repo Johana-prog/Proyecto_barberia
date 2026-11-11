@@ -60,6 +60,9 @@
             <a href="/registro/" class="nav-item" data-path="/registro/">
                 <svg class="ico" aria-hidden="true"><use href="#i-user-plus"/></svg><span class="sb-texto">Registrar Usuario</span>
             </a>
+                        <a href="/panel-barbero/#estadisticas-sec" id="btn-estadisticas" class="nav-item b-tab-btn" data-path="/panel-barbero/" data-hash="#estadisticas-sec" onclick="return cambiarPestanaLateral('estadisticas-sec','btn-estadisticas')">
+                <svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg><span class="sb-texto">Mis Estadísticas</span>
+            </a>
 
         {% elif usuario_sesion.rol == 'administrador' %}
             <a href="/dashboard-admin/#citas-sec" id="btn-citas" class="nav-item tab-btn" data-path="/dashboard-admin/" data-hash="#citas-sec" data-default="1" onclick="return cambiarPestanaLateral('citas-sec','btn-citas')">

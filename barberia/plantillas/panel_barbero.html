@@ -16,7 +16,7 @@
         </header>
 
         {% if citas_pendientes_count > 0 %}
-            <a href="#turnos-sec" class="aviso" onclick="abrirBarberoPestana('turnos-sec','btn-turnos'); return false;">
+            <a href="#turnos-sec" class="aviso" onclick="abrirBarberoPestana('turnos-sec','btn-turnos'); abrirSubPestanaBarbero('bsub-pendientes','bsubbtn-pendientes'); return false;">
                 <svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>
                 <span>Te reservaron <strong>{{ citas_pendientes_count }}</strong> cita{{ citas_pendientes_count|pluralize }}. Revisa tu agenda.</span>
                 <span class="aviso-accion">Ver</span>
@@ -34,7 +34,7 @@
                         <label for="fecha_jornada">Fecha de trabajo</label>
                         <input type="date" id="fecha_jornada" name="fecha" class="input" min="{{ hoy_iso }}" required>
                     </div>
-                                        <div class="campo">
+                    <div class="campo">
                         <label for="hora_inicio">Hora de entrada</label>
                         <select id="hora_inicio" name="hora_inicio" class="select">
                             <option value="08:00" selected>08:00 AM</option>
@@ -73,25 +73,141 @@
             </div>
         </div>
 
-        <!-- ================= SERVICIOS RESERVADOS ================= -->
+        <!-- ================= MI AGENDA (por estado) ================= -->
         <div id="turnos-sec" class="barbero-tab-content" style="display: none;">
-            <div class="card">
-                <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#i-calendar-check"/></svg>Mi agenda</div>
-                <p class="card-desc">Confirma, atiende o cancela las reservas de tus clientes. Los turnos libres los puedes quitar.</p>
-                <div class="lista-citas">
-                    {% for c in citas %}
-                        <div class="cita-item">
-                            <div>
-                                <div class="cita-fecha">{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</div>
-                                {% if c.es_libre %}
-                                    <div class="cita-servicio"><svg class="ico" aria-hidden="true"><use href="#i-calendar-plus"/></svg>Turno publicado, sin reservar</div>
-                                {% else %}
+
+            <div class="sub-tabs">
+                <button type="button" class="sub-tab-btn activo" id="bsubbtn-pendientes" aria-pressed="true" onclick="abrirSubPestanaBarbero('bsub-pendientes','bsubbtn-pendientes')">Pendientes <span class="num">{{ citas_pendientes|length }}</span></button>
+                <button type="button" class="sub-tab-btn" id="bsubbtn-confirmadas" aria-pressed="false" onclick="abrirSubPestanaBarbero('bsub-confirmadas','bsubbtn-confirmadas')">Confirmadas <span class="num">{{ citas_confirmadas|length }}</span></button>
+                <button type="button" class="sub-tab-btn" id="bsubbtn-atendidas" aria-pressed="false" onclick="abrirSubPestanaBarbero('bsub-atendidas','bsubbtn-atendidas')">Atendidas <span class="num">{{ citas_atendidas|length }}</span></button>
+                <button type="button" class="sub-tab-btn" id="bsubbtn-canceladas" aria-pressed="false" onclick="abrirSubPestanaBarbero('bsub-canceladas','bsubbtn-canceladas')">Canceladas <span class="num">{{ citas_canceladas|length }}</span></button>
+                <button type="button" class="sub-tab-btn" id="bsubbtn-libres" aria-pressed="false" onclick="abrirSubPestanaBarbero('bsub-libres','bsubbtn-libres')">Libres <span class="num">{{ turnos_libres|length }}</span></button>
+            </div>
+
+            <!-- Pendientes: se pueden confirmar o cancelar -->
+            <div id="bsub-pendientes" class="bsub-tab-content" style="display: block;">
+                <div class="card">
+                    <p class="card-desc">Reservas nuevas que esperan tu confirmación.</p>
+                    <div class="lista-citas">
+                        {% for c in citas_pendientes %}
+                            <div class="cita-item">
+                                <div>
+                                    <div class="cita-fecha">{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</div>
+                                    <div class="cita-servicio"><svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>{{ c.nombre_limpio_servicio }}{% if c.precio_mostrar %} · ${{ c.precio_mostrar|floatformat:"0g" }}{% endif %}</div>
+                                    <p class="card-desc" style="margin: 4px 0 0;">Cliente: {{ c.id_cliente.nombre }} {{ c.id_cliente.apellido }}</p>
+                                </div>
+                                <div class="acciones">
+                                    <form method="POST">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
+                                        <button type="submit" name="confirmar_cita" class="btn btn-primario btn-sm"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Confirmar</button>
+                                    </form>
+                                    <form method="POST" style="margin-left: 16px;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
+                                        <button type="submit" name="cancelar_cita" class="btn btn-borde btn-sm"
+                                                data-confirmar="La cita de {{ c.id_cliente.nombre }} ({{ c.nombre_limpio_servicio }}, {{ c.fecha|date:'j \d\e F' }} a las {{ c.hora|time:'g:i A' }}) se cancelará y el horario quedará libre otra vez."
+                                                data-confirmar-titulo="¿Cancelar esta cita?"
+                                                data-confirmar-boton="Sí, cancelar">Cancelar cita</button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="vacio">No tienes citas pendientes.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmadas: se pueden atender o cancelar -->
+            <div id="bsub-confirmadas" class="bsub-tab-content" style="display: none;">
+                <div class="card">
+                    <p class="card-desc">Citas confirmadas. Cuando atiendas al cliente, márcala como atendida.</p>
+                    <div class="lista-citas">
+                        {% for c in citas_confirmadas %}
+                            <div class="cita-item">
+                                <div>
+                                    <div class="cita-fecha">{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</div>
+                                    <div class="cita-servicio"><svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>{{ c.nombre_limpio_servicio }}{% if c.precio_mostrar %} · ${{ c.precio_mostrar|floatformat:"0g" }}{% endif %}</div>
+                                    <p class="card-desc" style="margin: 4px 0 0;">Cliente: {{ c.id_cliente.nombre }} {{ c.id_cliente.apellido }}</p>
+                                </div>
+                                <div class="acciones">
+                                    <form method="POST">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
+                                        <button type="submit" name="atender_cita" class="btn btn-primario btn-sm"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Atender</button>
+                                    </form>
+                                    <form method="POST" style="margin-left: 16px;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
+                                        <button type="submit" name="cancelar_cita" class="btn btn-borde btn-sm"
+                                                data-confirmar="La cita de {{ c.id_cliente.nombre }} ({{ c.nombre_limpio_servicio }}, {{ c.fecha|date:'j \d\e F' }} a las {{ c.hora|time:'g:i A' }}) se cancelará y el horario quedará libre otra vez."
+                                                data-confirmar-titulo="¿Cancelar esta cita?"
+                                                data-confirmar-boton="Sí, cancelar">Cancelar cita</button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="vacio">No tienes citas confirmadas.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Atendidas (las más recientes primero) -->
+            <div id="bsub-atendidas" class="bsub-tab-content" style="display: none;">
+                <div class="card">
+                    <p class="card-desc">Tu historial de citas atendidas, de la más reciente a la más antigua.</p>
+                    <div class="lista-citas">
+                        {% for c in citas_atendidas %}
+                            <div class="cita-item">
+                                <div>
+                                    <div class="cita-fecha">{{ c.fecha|date:"D j M Y" }} · {{ c.hora|time:"g:i A" }}</div>
+                                    <div class="cita-servicio"><svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>{{ c.nombre_limpio_servicio }}{% if c.precio_mostrar %} · ${{ c.precio_mostrar|floatformat:"0g" }}{% endif %}</div>
+                                    <p class="card-desc" style="margin: 4px 0 0;">Cliente: {{ c.id_cliente.nombre }} {{ c.id_cliente.apellido }}</p>
+                                </div>
+                                <div class="acciones"><span class="badge badge-atendida">Atendida</span></div>
+                            </div>
+                        {% empty %}
+                            <div class="vacio">Todavía no has atendido citas.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canceladas (las más recientes primero) -->
+            <div id="bsub-canceladas" class="bsub-tab-content" style="display: none;">
+                <div class="card">
+                    <p class="card-desc">Citas canceladas, de la más reciente a la más antigua.</p>
+                    <div class="lista-citas">
+                        {% for c in citas_canceladas %}
+                            <div class="cita-item">
+                                <div>
+                                    <div class="cita-fecha">{{ c.fecha|date:"D j M Y" }} · {{ c.hora|time:"g:i A" }}</div>
                                     <div class="cita-servicio"><svg class="ico" aria-hidden="true"><use href="#i-scissors"/></svg>{{ c.nombre_limpio_servicio }}</div>
                                     <p class="card-desc" style="margin: 4px 0 0;">Cliente: {{ c.id_cliente.nombre }} {{ c.id_cliente.apellido }}</p>
-                                {% endif %}
+                                </div>
+                                <div class="acciones"><span class="badge badge-cancelada">Cancelada</span></div>
                             </div>
-                            <div class="acciones">
-                                {% if c.es_libre %}
+                        {% empty %}
+                            <div class="vacio">No tienes citas canceladas.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Libres: turnos publicados que nadie ha reservado -->
+            <div id="bsub-libres" class="bsub-tab-content" style="display: none;">
+                <div class="card">
+                    <p class="card-desc">Turnos publicados que nadie ha reservado. Si te equivocaste al publicarlos, los puedes quitar. Los que ya pasaron no se muestran.</p>
+                    <div class="lista-citas">
+                        {% for c in turnos_libres %}
+                            <div class="cita-item">
+                                <div>
+                                    <div class="cita-fecha">{{ c.fecha|date:"D j M" }} · {{ c.hora|time:"g:i A" }}</div>
+                                    <div class="cita-servicio"><svg class="ico" aria-hidden="true"><use href="#i-calendar-plus"/></svg>Turno publicado, sin reservar</div>
+                                </div>
+                                <div class="acciones">
                                     <span class="badge badge-libre">Libre</span>
                                     <form method="POST">
                                         {% csrf_token %}
@@ -101,41 +217,15 @@
                                                 data-confirmar-titulo="¿Quitar este turno?"
                                                 data-confirmar-boton="Sí, quitar">Quitar turno</button>
                                     </form>
-                                {% else %}
-                                    <span class="badge badge-{{ c.estado }}">{{ c.estado|capfirst }}</span>
-
-                                    {% if c.estado == 'pendiente' %}
-                                        <form method="POST">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
-                                            <button type="submit" name="confirmar_cita" class="btn btn-primario btn-sm"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Confirmar</button>
-                                        </form>
-                                    {% elif c.estado == 'confirmada' %}
-                                        <form method="POST">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
-                                            <button type="submit" name="atender_cita" class="btn btn-primario btn-sm"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Atender</button>
-                                        </form>
-                                    {% endif %}
-
-                                    {% if c.estado == 'pendiente' or c.estado == 'confirmada' %}
-                                        <form method="POST" style="margin-left: 16px;">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="id_cita" value="{{ c.id_cita }}">
-                                            <button type="submit" name="cancelar_cita" class="btn btn-borde btn-sm"
-                                                    data-confirmar="La cita de {{ c.id_cliente.nombre }} ({{ c.nombre_limpio_servicio }}, {{ c.fecha|date:'j \d\e F' }} a las {{ c.hora|time:'g:i A' }}) se cancelará y el horario quedará libre otra vez."
-                                                    data-confirmar-titulo="¿Cancelar esta cita?"
-                                                    data-confirmar-boton="Sí, cancelar">Cancelar cita</button>
-                                        </form>
-                                    {% endif %}
-                                {% endif %}
+                                </div>
                             </div>
-                        </div>
-                    {% empty %}
-                        <div class="vacio">Todavía no tienes turnos publicados ni reservas.</div>
-                    {% endfor %}
+                        {% empty %}
+                            <div class="vacio">No tienes turnos libres publicados.</div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
+
         </div>
 
         <!-- ================= MI PORTAFOLIO ================= -->
@@ -213,6 +303,11 @@
             </div>
         </div>
 
+        <!-- ================= MIS ESTADÍSTICAS ================= -->
+        <div id="estadisticas-sec" class="barbero-tab-content" style="display: none;">
+            {% include '_mis_estadisticas.html' %}
+        </div>
+
     </div>
     </main>
 </div>
@@ -220,14 +315,45 @@
 <script>
     function abrirBarberoPestana(idSeccion, idBoton) {
         document.querySelectorAll('.barbero-tab-content').forEach(function (sec) { sec.style.display = 'none'; });
-        document.getElementById(idSeccion).style.display = 'block';
+        var seccion = document.getElementById(idSeccion);
+        if (seccion) { seccion.style.display = 'block'; }
         history.replaceState(null, '', '#' + idSeccion);
+    }
+
+    function abrirSubPestanaBarbero(idSeccion, idBoton) {
+        document.querySelectorAll('.bsub-tab-content').forEach(function (sec) { sec.style.display = 'none'; });
+        document.querySelectorAll('.sub-tab-btn').forEach(function (btn) {
+            btn.classList.remove('activo');
+            btn.setAttribute('aria-pressed', 'false');
+        });
+        document.getElementById(idSeccion).style.display = 'block';
+        var boton = document.getElementById(idBoton);
+        boton.classList.add('activo');
+        boton.setAttribute('aria-pressed', 'true');
+
+        // Se recuerda la pestaña para que, al recargar, no vuelva siempre a «Pendientes»
+        try { sessionStorage.setItem('barberoSubPestana', idSeccion + '|' + idBoton); } catch (e) {}
     }
 
     window.addEventListener('DOMContentLoaded', function () {
         var hash = window.location.hash.replace('#', '');
-        var mapa = { 'agenda-sec': 'btn-agenda', 'turnos-sec': 'btn-turnos', 'portafolio-sec': 'btn-portafolio' };
+        var mapa = {
+            'agenda-sec': 'btn-agenda',
+            'turnos-sec': 'btn-turnos',
+            'portafolio-sec': 'btn-portafolio',
+            'estadisticas-sec': 'btn-estadisticas'
+        };
         if (hash && mapa[hash]) { abrirBarberoPestana(hash, mapa[hash]); }
+
+        try {
+            var guardada = sessionStorage.getItem('barberoSubPestana');
+            if (guardada) {
+                var partes = guardada.split('|');
+                if (document.getElementById(partes[0]) && document.getElementById(partes[1])) {
+                    abrirSubPestanaBarbero(partes[0], partes[1]);
+                }
+            }
+        } catch (e) {}
     });
 </script>
 {% endblock %}

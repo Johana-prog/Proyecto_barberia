@@ -1,0 +1,160 @@
+{% load static %}
+{% if estadisticas %}
+<style>
+    .stats-grid.stats-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .graficas-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .graficas-grid > .card + .card { margin-top: 0; }
+
+    .grafica-box { position: relative; height: 280px; }
+
+    .grafica-vacia {
+        display: grid;
+        place-items: center;
+        height: 280px;
+        padding: 0 20px;
+        color: var(--piedra);
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    @media (max-width: 1100px) { .stats-grid.stats-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 900px) {
+        .stats-grid.stats-4 { grid-template-columns: 1fr; }
+        .graficas-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="stats-grid stats-4">
+    {% for t in estadisticas.tarjetas %}
+        <div class="stat">
+            <div class="stat-label">{{ t.etiqueta }}</div>
+            <div class="stat-valor">{{ t.valor }}{% if t.unidad %} <small>{{ t.unidad }}</small>{% endif %}</div>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="graficas-grid">
+    {% for g in estadisticas.graficas %}
+        <div class="card">
+            <div class="card-titulo"><svg class="ico" aria-hidden="true"><use href="#{{ g.icono }}"/></svg>{{ g.titulo }}</div>
+            <p class="card-desc">{{ g.descripcion }}</p>
+            <div class="grafica-box" id="box-{{ g.id }}"><canvas id="g-{{ g.id }}"></canvas></div>
+        </div>
+    {% endfor %}
+</div>
+
+{{ estadisticas.graficas|json_script:"datos-mis-graficas" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+    (function () {
+        var nodo = document.getElementById('datos-mis-graficas');
+        if (!nodo) { return; }
+        var graficas = JSON.parse(nodo.textContent);
+
+        var COLORES = { dorado: '#C9A227', rojo: '#C0504D', salvia: '#5E8C6A' };
+        var PALETA_DONA = ['#C9A227', '#5E8C6A', '#F2ECE2', '#C0504D'];
+
+        function dinero(v) { return '$' + Number(v).toLocaleString('es-CO'); }
+        function formatear(g, v) { return g.formato === 'dinero' ? dinero(v) + ' COP' : v; }
+
+        // Descripción en texto de la gráfica, para lectores de pantalla
+        function describir(lienzo, g) {
+            var partes = g.etiquetas.map(function (e, i) { return e + ': ' + formatear(g, g.valores[i]); });
+            lienzo.setAttribute('role', 'img');
+            lienzo.setAttribute('aria-label', g.titulo + '. ' + partes.join('; ') + '.');
+        }
+
+        function dibujar() {
+            Chart.defaults.color = '#9A9288';
+            Chart.defaults.font.family = "'Segoe UI', Tahoma, sans-serif";
+            Chart.defaults.borderColor = '#2E2926';
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { Chart.defaults.animation = false; }
+
+            graficas.forEach(function (g) {
+                var caja = document.getElementById('box-' + g.id);
+                var lienzo = document.getElementById('g-' + g.id);
+                if (!caja || !lienzo) { return; }
+
+                var hayDatos = g.valores.some(function (v) { return v > 0; });
+                if (!hayDatos) {
+                    var aviso = document.createElement('div');
+                    aviso.className = 'grafica-vacia';
+                    aviso.textContent = g.vacio;
+                    caja.textContent = '';
+                    caja.appendChild(aviso);
+                    return;
+                }
+
+                if (g.tipo === 'dona') {
+                    new Chart(lienzo, {
+                        type: 'doughnut',
+                        data: {
+                            labels: g.etiquetas,
+                            datasets: [{ data: g.valores, backgroundColor: PALETA_DONA, borderColor: '#1D1A18', borderWidth: 3 }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '62%',
+                            plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16 } } }
+                        }
+                    });
+                } else {
+                    var horizontal = g.tipo === 'barras_horizontales';
+                    var escalaValor = {
+                        beginAtZero: true,
+                        ticks: g.formato === 'dinero' ? { callback: function (v) { return dinero(v); } } : { precision: 0 }
+                    };
+                    var escalaEtiqueta = { grid: { display: false } };
+
+                    new Chart(lienzo, {
+                        type: 'bar',
+                        data: {
+                            labels: g.etiquetas,
+                            datasets: [{
+                                data: g.valores,
+                                backgroundColor: COLORES[g.color] || COLORES.dorado,
+                                borderRadius: 6,
+                                maxBarThickness: horizontal ? 30 : 46
+                            }]
+                        },
+                        options: {
+                            indexAxis: horizontal ? 'y' : 'x',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { callbacks: { label: function (c) {
+                                    var v = horizontal ? c.parsed.x : c.parsed.y;
+                                    return ' ' + formatear(g, v);
+                                } } }
+                            },
+                            scales: horizontal ? { x: escalaValor, y: escalaEtiqueta } : { y: escalaValor, x: escalaEtiqueta }
+                        }
+                    });
+                }
+                describir(lienzo, g);
+            });
+        }
+
+        // Si el CDN no cargó (sin internet), intenta con la copia local
+        function iniciar() {
+            if (window.Chart) { dibujar(); return; }
+
+            var copia = document.createElement('script');
+            copia.src = "{% static 'js/chart.umd.min.js' %}";
+            copia.onload = dibujar;
+            copia.onerror = function () {
+                document.querySelectorAll('.grafica-box').forEach(function (caja) {
+                    caja.textContent = 'No se pudo cargar la librería de gráficas. Revisa tu conexión a internet.';
+                });
+            };
+            document.head.appendChild(copia);
+        }
+
+        iniciar();
+    })();
+</script>
+{% endif %}

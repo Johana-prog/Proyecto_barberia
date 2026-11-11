@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import dateformat, timezone
 
+from servicios import services
 from servicios.models import (
     Barbero,
     BarberoServicioEstrella,
@@ -19,12 +20,17 @@ from servicios.models import (
     Servicio,
     Usuario,
 )
+from servicios.services import (
+    HORAS_MIN_CANCELAR,
+    LIBRE,
+    ROLES_VALIDOS,
+    ReglaDeNegocio,
+    ahora_local,
+    momento_cita,
+)
 
 logger = logging.getLogger(__name__)
 
-ROLES_VALIDOS = ('cliente', 'barbero', 'administrador')
-LIBRE = 'Horario Disponible'      # así se marca un turno publicado que nadie ha reservado
-HORAS_MIN_CANCELAR = 2            # el cliente puede cancelar hasta 2 horas antes
 MAX_FOTO_MB = 5
 MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -114,23 +120,8 @@ def solo_rol(*roles_permitidos):
 
 
 # =========================================================================
-# Utilidades de fechas, precios y datos de las citas
+# Utilidades para leer formularios y mostrar datos de las citas
 # =========================================================================
-def ahora_local():
-    """Fecha y hora actuales en Bogotá, sin zona horaria (para compararlas con las citas)."""
-    return timezone.localtime().replace(tzinfo=None)
-
-
-def momento_cita(cita):
-    """Fecha y hora de una cita como un solo valor."""
-    return datetime.datetime.combine(cita.fecha, cita.hora)
-
-
-def usuario_comodin():
-    """Cuenta a la que se asocian los turnos libres (todavía sin cliente)."""
-    return Usuario.objects.filter(rol='administrador').first() or Usuario.objects.first()
-
-
 def entero(valor):
     """Convierte a número entero o devuelve None (evita errores con datos mal enviados)."""
     try:
@@ -225,7 +216,7 @@ def galeria_fotos_publica(request):
 
 # =========================================================================
 # 2. Registro e inicio de sesión
-#
+# =========================================================================
 def registrar_cliente(request):
     contexto = {'sesion_activa': 'cliente_nombre' in request.session}
 
@@ -291,31 +282,21 @@ def iniciar_sesion(request):
 
     return render(request, 'login.html')
 
+
+
 # =========================================================================
-# 4. Panel del cliente (ahora puede cancelar su propia cita)
+# 4. Panel del cliente
 # =========================================================================
 @solo_rol('cliente')
 def panel_cliente(request):
     usuario = usuario_de_sesion(request)
 
     if request.method == 'POST' and 'cancelar_mi_cita' in request.POST:
-        cita = (
-            Cita.objects.filter(id_cita=entero(request.POST.get('id_cita')), id_cliente=usuario)
-            .exclude(observaciones=LIBRE)
-            .first()
-        )
-        if cita is None:
-            messages.error(request, 'No encontramos esa cita.')
-        elif cita.estado not in ('pendiente', 'confirmada'):
-            messages.error(request, 'Esta cita ya no se puede cancelar.')
-        elif momento_cita(cita) - ahora_local() < datetime.timedelta(hours=HORAS_MIN_CANCELAR):
-            messages.error(
-                request,
-                f'Solo puedes cancelar hasta {HORAS_MIN_CANCELAR} horas antes de la cita. '
-                'Si necesitas ayuda, comunícate con la barbería.',
-            )
+        try:
+            services.cancelar_cita_cliente(usuario, entero(request.POST.get('id_cita')))
+        except ReglaDeNegocio as error:
+            messages.error(request, str(error))
         else:
-            cancelar_y_liberar(cita)
             messages.success(request, 'Tu cita fue cancelada. El horario quedó libre para otras personas.')
         return redirect('panel_cliente')
 
@@ -389,7 +370,6 @@ def configurar_perfil(request):
     return render(request, 'perfil.html', {'usuario': usuario, 'sesion_activa': True})
 
 
-
 # =========================================================================
 # 6. Panel del barbero
 # =========================================================================
@@ -406,11 +386,12 @@ def panel_barbero(request):
         })
 
     if request.method == 'POST':
+        post = request.POST
         destino = '#agenda-sec'
 
-        if 'guardar_estrellas' in request.POST:
+        if 'guardar_estrellas' in post:
             destino = '#portafolio-sec'
-            ids = [i for i in (entero(x) for x in request.POST.getlist('servicios_estrella')) if i is not None]
+            ids = [i for i in (entero(x) for x in post.getlist('servicios_estrella')) if i is not None]
             validos = list(Servicio.objects.filter(id_servicio__in=ids))
             with transaction.atomic():
                 BarberoServicioEstrella.objects.filter(id_barbero=barbero).delete()
@@ -418,7 +399,7 @@ def panel_barbero(request):
                     BarberoServicioEstrella.objects.create(id_barbero=barbero, id_servicio=servicio)
             messages.success(request, 'Tus servicios estrella se actualizaron.')
 
-        elif 'subir_foto' in request.POST:
+        elif 'subir_foto' in post:
             destino = '#portafolio-sec'
             archivo = request.FILES.get('foto_trabajo')
             if not archivo:
@@ -428,98 +409,97 @@ def panel_barbero(request):
             elif not es_imagen_valida(archivo):
                 messages.error(request, 'El archivo que elegiste no es una imagen válida.')
             else:
-                servicio = Servicio.objects.filter(id_servicio=entero(request.POST.get('servicio_foto'))).first()
-                nombre = (request.POST.get('nombre_estilo') or '').strip()[:80]
+                servicio = Servicio.objects.filter(id_servicio=entero(post.get('servicio_foto'))).first()
+                nombre = (post.get('nombre_estilo') or '').strip()[:80]
                 FotoTrabajoBarbero.objects.create(
                     id_barbero=barbero, imagen=archivo,
                     nombre_estilo=nombre or None, id_servicio=servicio,
                 )
                 messages.success(request, 'Estilo agregado a tu portafolio.')
 
-        elif 'eliminar_foto' in request.POST:
+        elif 'eliminar_foto' in post:
             destino = '#portafolio-sec'
-            FotoTrabajoBarbero.objects.filter(id_foto=entero(request.POST.get('id_foto')), id_barbero=barbero).delete()
+            FotoTrabajoBarbero.objects.filter(id_foto=entero(post.get('id_foto')), id_barbero=barbero).delete()
             messages.success(request, 'Foto eliminada de tu portafolio.')
 
-        elif 'crear_espacio' in request.POST:
+        elif 'crear_espacio' in post:
             destino = '#agenda-sec'
             try:
-                fecha = datetime.date.fromisoformat(request.POST.get('fecha', ''))
-                h_ini = int(request.POST.get('hora_inicio', '').split(':')[0])
-                h_fin = int(request.POST.get('hora_fin', '').split(':')[0])
+                fecha = datetime.date.fromisoformat(post.get('fecha', ''))
+                h_ini = int(post.get('hora_inicio', '').split(':')[0])
+                h_fin = int(post.get('hora_fin', '').split(':')[0])
             except (ValueError, TypeError):
                 messages.error(request, 'Revisa la fecha y las horas: no se pudo leer la jornada.')
             else:
-                if fecha < timezone.localdate():
-                    messages.error(request, 'No puedes publicar horarios en una fecha que ya pasó.')
-                elif h_fin <= h_ini:
-                    messages.error(request, 'La hora de salida debe ser posterior a la de entrada.')
+                try:
+                    creados = services.publicar_jornada(barbero, fecha, h_ini, h_fin)
+                except ReglaDeNegocio as error:
+                    messages.error(request, str(error))
+                except Exception:
+                    logger.exception('No se pudo generar la agenda')
+                    messages.error(request, 'No pudimos generar la agenda. Inténtalo de nuevo.')
                 else:
-                    comodin = usuario_comodin()
-                    creados = 0
-                    try:
-                        with transaction.atomic():
-                            for hora in range(h_ini, h_fin):
-                                momento = datetime.time(hora, 0)
-                                if not Cita.objects.filter(fecha=fecha, hora=momento, id_barbero=barbero).exclude(estado='cancelada').exists():
-                                    Cita.objects.create(
-                                        fecha=fecha, hora=momento, estado='pendiente',
-                                        observaciones=LIBRE, id_cliente=comodin, id_barbero=barbero,
-                                    )
-                                    creados += 1
-                    except Exception:
-                        logger.exception('No se pudo generar la agenda')
-                        messages.error(request, 'No pudimos generar la agenda. Inténtalo de nuevo.')
+                    if creados:
+                        messages.success(request, f'Publicaste {creados} turno{"s" if creados != 1 else ""} para el {fecha.strftime("%d/%m/%Y")}.')
                     else:
-                        if creados:
-                            messages.success(request, f'Publicaste {creados} turno{"s" if creados != 1 else ""} para el {fecha.strftime("%d/%m/%Y")}.')
-                        else:
-                            messages.warning(request, 'Esos horarios ya estaban publicados en tu agenda.')
+                        messages.warning(request, 'Esos horarios ya estaban publicados en tu agenda.')
 
-        elif 'eliminar_turno' in request.POST:
+        elif 'eliminar_turno' in post:
             destino = '#turnos-sec'
-            borrados, _ = Cita.objects.filter(
-                id_cita=entero(request.POST.get('id_cita')), id_barbero=barbero, observaciones=LIBRE,
-            ).delete()
-            if borrados:
-                messages.success(request, 'Turno libre eliminado.')
+            try:
+                services.eliminar_turno_libre(barbero, entero(post.get('id_cita')))
+            except ReglaDeNegocio as error:
+                messages.error(request, str(error))
             else:
-                messages.error(request, 'No se pudo eliminar: el turno ya fue reservado o no existe.')
+                messages.success(request, 'Turno libre eliminado.')
 
-        elif 'id_cita' in request.POST:
+        elif 'id_cita' in post:
             destino = '#turnos-sec'
             cita = (
-                Cita.objects.filter(id_cita=entero(request.POST.get('id_cita')), id_barbero=barbero)
+                Cita.objects.filter(id_cita=entero(post.get('id_cita')), id_barbero=barbero)
                 .exclude(observaciones=LIBRE)
                 .first()
             )
             if cita is None:
                 messages.error(request, 'No encontramos esa cita.')
-            elif 'confirmar_cita' in request.POST and cita.estado == 'pendiente':
-                cita.estado = 'confirmada'
-                cita.save(update_fields=['estado'])
-                messages.success(request, 'Cita confirmada.', extra_tags='modal')
-            elif 'atender_cita' in request.POST and cita.estado == 'confirmada':
-                cita.estado = 'atendida'
-                cita.save(update_fields=['estado'])
-                messages.success(request, 'Cita marcada como atendida.', extra_tags='modal')
-            elif 'cancelar_cita' in request.POST and cita.estado in ('pendiente', 'confirmada'):
-                cancelar_y_liberar(cita)
-                messages.success(request, 'Cita cancelada. El horario quedó libre otra vez.')
             else:
-                messages.error(request, 'Esa acción ya no corresponde al estado de la cita. Actualiza la página.')
+                try:
+                    if 'confirmar_cita' in post:
+                        services.confirmar_cita(cita)
+                        messages.success(request, 'Cita confirmada.')
+                    elif 'atender_cita' in post:
+                        services.atender_cita(cita)
+                        messages.success(request, 'Cita marcada como atendida.')
+                    elif 'cancelar_cita' in post:
+                        services.cancelar_y_liberar(cita)
+                        messages.success(request, 'Cita cancelada. El horario quedó libre otra vez.')
+                    else:
+                        messages.error(request, services.MENSAJE_ESTADO_CAMBIADO)
+                except ReglaDeNegocio as error:
+                    messages.error(request, str(error))
 
         return redirect(f"{reverse('panel_barbero')}{destino}")
 
     citas = list(Cita.objects.select_related('id_cliente').filter(id_barbero=barbero).order_by('fecha', 'hora'))
     for c in citas:
         preparar_cita(c)
-    pendientes = sum(1 for c in citas if c.estado == 'pendiente' and not c.es_libre)
+    ahora = ahora_local()
+    reales = [c for c in citas if not c.es_libre]
+    citas_pendientes = [c for c in reales if c.estado == 'pendiente']
+    citas_confirmadas = [c for c in reales if c.estado == 'confirmada']
+    citas_atendidas = [c for c in reales if c.estado == 'atendida'][::-1]
+    citas_canceladas = [c for c in reales if c.estado == 'cancelada'][::-1]
+    turnos_libres = [c for c in citas if c.es_libre and momento_cita(c) >= ahora]
 
     return render(request, 'panel_barbero.html', {
-        "citas": citas,
+        "citas_pendientes": citas_pendientes,
+        "citas_confirmadas": citas_confirmadas,
+        "citas_atendidas": citas_atendidas,
+        "citas_canceladas": citas_canceladas,
+        "turnos_libres": turnos_libres,
         "sesion_activa": True,
-        "citas_pendientes_count": pendientes,
+        "citas_pendientes_count": len(citas_pendientes),
+        "estadisticas": estadisticas_barbero(reales),
         "servicios": Servicio.objects.all(),
         "ids_estrella": list(BarberoServicioEstrella.objects.filter(id_barbero=barbero).values_list('id_servicio_id', flat=True)),
         "fotos_trabajo": FotoTrabajoBarbero.objects.select_related('id_servicio').filter(id_barbero=barbero).order_by('-fecha_subida', '-id_foto'),
@@ -528,21 +508,81 @@ def panel_barbero(request):
     })
 
 
+
 # =========================================================================
 # 7. Panel del administrador
 # =========================================================================
+def calcular_estadisticas(reales, pendientes, confirmadas, atendidas, canceladas):
+    """Calcula los números y los datos de las gráficas del panel del administrador."""
+    activas = [c for c in reales if c.estado != 'cancelada']
+    total_caja = sum(precio_cita(c) for c in atendidas)
+
+    hoy = timezone.localdate()
+    fin = max([hoy] + [c.fecha for c in atendidas])
+    meses = []
+    anio, mes = fin.year, fin.month
+    for _ in range(6):
+        meses.append((anio, mes))
+        mes -= 1
+        if mes == 0:
+            mes = 12
+            anio -= 1
+    meses.reverse()
+
+    ingresos_por_mes = {clave: 0 for clave in meses}
+    for c in atendidas:
+        clave = (c.fecha.year, c.fecha.month)
+        if clave in ingresos_por_mes:
+            ingresos_por_mes[clave] += precio_cita(c)
+
+    servicios_top = Counter(c.nombre_limpio_servicio for c in activas if c.nombre_limpio_servicio).most_common(5)
+    por_barbero = Counter(c.id_barbero.id_usuario.nombre for c in activas).most_common(6)
+
+    ingresos_mes_actual = ingresos_por_mes.get((fin.year, fin.month), 0)
+    ticket_promedio = int(total_caja / len(atendidas)) if atendidas else 0
+    tasa_cancelacion = round(len(canceladas) * 100 / len(reales)) if reales else 0
+
+    datos_graficas = {
+        'ingresos': {
+            'etiquetas': [f"{MESES_CORTOS[m - 1]} {a}" for (a, m) in meses],
+            'valores': [ingresos_por_mes[k] for k in meses],
+        },
+        'servicios': {
+            'etiquetas': [s[0] for s in servicios_top],
+            'valores': [s[1] for s in servicios_top],
+        },
+        'estados': {
+            'etiquetas': ['Pendientes', 'Confirmadas', 'Atendidas', 'Canceladas'],
+            'valores': [len(pendientes), len(confirmadas), len(atendidas), len(canceladas)],
+        },
+        'barberos': {
+            'etiquetas': [b[0] for b in por_barbero],
+            'valores': [b[1] for b in por_barbero],
+        },
+    }
+
+    resumen = {
+        'ingresos_mes': pesos(ingresos_mes_actual),
+        'ticket': pesos(ticket_promedio),
+        'total_citas': len(reales),
+        'cancelacion': tasa_cancelacion,
+    }
+    return total_caja, datos_graficas, resumen
+
+
 @solo_rol('administrador')
 def panel_administrador(request):
     yo = usuario_de_sesion(request)
 
     if request.method == 'POST':
+        post = request.POST
         destino = '#citas-sec'
 
-        if 'agregar_servicio' in request.POST:
+        if 'agregar_servicio' in post:
             destino = '#servicios-sec'
-            nombre = (request.POST.get('nombre_nuevo_servicio') or '').strip()
-            descripcion = (request.POST.get('descripcion_nuevo_servicio') or '').strip()
-            precio = leer_precio(request.POST.get('precio_nuevo_servicio'))
+            nombre = (post.get('nombre_nuevo_servicio') or '').strip()
+            descripcion = (post.get('descripcion_nuevo_servicio') or '').strip()
+            precio = leer_precio(post.get('precio_nuevo_servicio'))
             if not nombre or precio is None:
                 messages.error(request, 'Escribe el nombre y un precio válido para el servicio.')
             elif Servicio.objects.filter(nombre_servicio__iexact=nombre).exists():
@@ -551,10 +591,10 @@ def panel_administrador(request):
                 Servicio.objects.create(nombre_servicio=nombre, descripcion=descripcion or None, precio=precio, estado=1)
                 messages.success(request, f'Servicio «{nombre}» creado. Ya aparece en el inicio y en las reservas.')
 
-        elif 'actualizar_precio' in request.POST:
+        elif 'actualizar_precio' in post:
             destino = '#servicios-sec'
-            servicio = Servicio.objects.filter(id_servicio=entero(request.POST.get('id_servicio'))).first()
-            precio = leer_precio(request.POST.get('nuevo_precio'))
+            servicio = Servicio.objects.filter(id_servicio=entero(post.get('id_servicio'))).first()
+            precio = leer_precio(post.get('nuevo_precio'))
             if servicio is None or precio is None:
                 messages.error(request, 'Escribe un precio válido.')
             else:
@@ -562,59 +602,61 @@ def panel_administrador(request):
                 servicio.save(update_fields=['precio'])
                 messages.success(request, f'La tarifa de «{servicio.nombre_servicio}» ahora es ${pesos(precio)} COP.')
 
-        elif 'desactivar_usuario' in request.POST or 'activar_usuario' in request.POST:
+        elif 'desactivar_usuario' in post or 'activar_usuario' in post:
             destino = '#usuarios-sec'
-            activar = 'activar_usuario' in request.POST
-            objetivo = Usuario.objects.filter(id_usuario=entero(request.POST.get('id_usuario'))).first()
+            activar = 'activar_usuario' in post
+            objetivo = Usuario.objects.filter(id_usuario=entero(post.get('id_usuario'))).first()
             if objetivo is None:
                 messages.error(request, 'No encontramos a ese usuario.')
-            elif objetivo.id_usuario == yo.id_usuario:
-                messages.error(request, 'No puedes desactivar tu propia cuenta.')
             else:
-                objetivo.estado = 1 if activar else 0
-                objetivo.save(update_fields=['estado'])
-                accion = 'activada' if activar else 'desactivada'
-                messages.success(request, f'La cuenta de {objetivo.nombre} {objetivo.apellido} fue {accion}.')
+                try:
+                    services.cambiar_estado_usuario(yo, objetivo, activar)
+                except ReglaDeNegocio as error:
+                    messages.error(request, str(error))
+                else:
+                    accion = 'activada' if activar else 'desactivada'
+                    messages.success(request, f'La cuenta de {objetivo.nombre} {objetivo.apellido} fue {accion}.')
 
-        elif 'eliminar_usuario' in request.POST:
+        elif 'eliminar_usuario' in post:
             destino = '#usuarios-sec'
             messages.warning(request, 'La opción Eliminar se reemplazó por Desactivar. Actualiza la página.')
 
-        elif 'id_cita' in request.POST:
+        elif 'id_cita' in post:
             destino = '#citas-sec'
-            cita = Cita.objects.filter(id_cita=entero(request.POST.get('id_cita'))).exclude(observaciones=LIBRE).first()
+            cita = Cita.objects.filter(id_cita=entero(post.get('id_cita'))).exclude(observaciones=LIBRE).first()
             if cita is None:
                 messages.error(request, 'No encontramos esa cita.')
-            elif ('confirmar_cita' in request.POST or 'aceptar_cita' in request.POST) and cita.estado == 'pendiente':
-                cita.estado = 'confirmada'
-                cita.save(update_fields=['estado'])
-                messages.success(request, 'Cita confirmada.', extra_tags='modal')
-            elif 'cancelar_cita' in request.POST and cita.estado in ('pendiente', 'confirmada'):
-                cancelar_y_liberar(cita)
-                messages.success(request, 'Cita cancelada. El horario quedó libre otra vez.')
             else:
-                messages.error(request, 'Esa acción ya no corresponde al estado de la cita. Actualiza la página.')
+                try:
+                    if 'confirmar_cita' in post or 'aceptar_cita' in post:
+                        services.confirmar_cita(cita)
+                        messages.success(request, 'Cita confirmada.')
+                    elif 'cancelar_cita' in post:
+                        services.cancelar_y_liberar(cita)
+                        messages.success(request, 'Cita cancelada. El horario quedó libre otra vez.')
+                    else:
+                        messages.error(request, services.MENSAJE_ESTADO_CAMBIADO)
+                except ReglaDeNegocio as error:
+                    messages.error(request, str(error))
 
-        elif 'cambiar_rol' in request.POST:
+        elif 'cambiar_rol' in post:
             destino = '#usuarios-sec'
-            nuevo = request.POST.get('nuevo_rol')
-            objetivo = Usuario.objects.filter(id_usuario=entero(request.POST.get('id_usuario'))).first()
-            if nuevo not in ROLES_VALIDOS:
-                messages.error(request, 'Rol no válido.')
-            elif objetivo is None:
+            objetivo = Usuario.objects.filter(id_usuario=entero(post.get('id_usuario'))).first()
+            if objetivo is None:
                 messages.error(request, 'No encontramos a ese usuario.')
-            elif objetivo.id_usuario == yo.id_usuario and nuevo != objetivo.rol:
-                messages.error(request, 'No puedes cambiar tu propio rol. Pídeselo a otra persona administradora.')
-            elif objetivo.rol == nuevo:
-                messages.info(request, 'Ese usuario ya tenía ese rol.')
             else:
-                objetivo.rol = nuevo
-                objetivo.save(update_fields=['rol'])
-                if nuevo == 'barbero' and not Barbero.objects.filter(id_usuario=objetivo).exists():
-                    Barbero.objects.create(id_usuario=objetivo, especialidad='Por definir', experiencia_anios=0)
-                    messages.success(request, f'{objetivo.nombre} ahora es barbero y su ficha se creó automáticamente.')
+                nuevo = post.get('nuevo_rol')
+                try:
+                    hubo_cambio, ficha_creada = services.cambiar_rol(yo, objetivo, nuevo)
+                except ReglaDeNegocio as error:
+                    messages.error(request, str(error))
                 else:
-                    messages.success(request, f'El rol de {objetivo.nombre} cambió a {nuevo}.')
+                    if not hubo_cambio:
+                        messages.info(request, 'Ese usuario ya tenía ese rol.')
+                    elif ficha_creada:
+                        messages.success(request, f'{objetivo.nombre} ahora es barbero y su ficha se creó automáticamente.')
+                    else:
+                        messages.success(request, f'El rol de {objetivo.nombre} cambió a {nuevo}.')
 
         return redirect(f"{reverse('panel_admin')}{destino}")
 
@@ -633,61 +675,9 @@ def panel_administrador(request):
     citas_canceladas = [c for c in reales if c.estado == 'cancelada']
     citas_atendidas = [c for c in reales if c.estado == 'atendida']
 
-    total_caja = sum(precio_cita(c) for c in citas_atendidas)
-
-    # ---------------- Datos para las gráficas ----------------
-    activas = [c for c in reales if c.estado != 'cancelada']
-
-    hoy = datetime.date.today()
-    fin = max([hoy] + [c.fecha for c in citas_atendidas])
-    meses = []
-    anio, mes = fin.year, fin.month
-    for _ in range(6):
-        meses.append((anio, mes))
-        mes -= 1
-        if mes == 0:
-            mes = 12
-            anio -= 1
-    meses.reverse()
-
-    ingresos_por_mes = {clave: 0 for clave in meses}
-    for c in citas_atendidas:
-        clave = (c.fecha.year, c.fecha.month)
-        if clave in ingresos_por_mes:
-            ingresos_por_mes[clave] += precio_cita(c)
-
-    servicios_top = Counter(c.nombre_limpio_servicio for c in activas if c.nombre_limpio_servicio).most_common(5)
-    por_barbero = Counter(c.id_barbero.id_usuario.nombre for c in activas).most_common(6)
-
-    ingresos_mes_actual = ingresos_por_mes.get((fin.year, fin.month), 0)
-    ticket_promedio = int(total_caja / len(citas_atendidas)) if citas_atendidas else 0
-    tasa_cancelacion = round(len(citas_canceladas) * 100 / len(reales)) if reales else 0
-
-    datos_graficas = {
-        'ingresos': {
-            'etiquetas': [f"{MESES_CORTOS[m - 1]} {a}" for (a, m) in meses],
-            'valores': [ingresos_por_mes[k] for k in meses],
-        },
-        'servicios': {
-            'etiquetas': [s[0] for s in servicios_top],
-            'valores': [s[1] for s in servicios_top],
-        },
-        'estados': {
-            'etiquetas': ['Pendientes', 'Confirmadas', 'Atendidas', 'Canceladas'],
-            'valores': [len(citas_pendientes), len(citas_confirmadas), len(citas_atendidas), len(citas_canceladas)],
-        },
-        'barberos': {
-            'etiquetas': [b[0] for b in por_barbero],
-            'valores': [b[1] for b in por_barbero],
-        },
-    }
-
-    resumen = {
-        'ingresos_mes': pesos(ingresos_mes_actual),
-        'ticket': pesos(ticket_promedio),
-        'total_citas': len(reales),
-        'cancelacion': tasa_cancelacion,
-    }
+    total_caja, datos_graficas, resumen = calcular_estadisticas(
+        reales, citas_pendientes, citas_confirmadas, citas_atendidas, citas_canceladas,
+    )
 
     return render(request, 'panel_admin.html', {
         'usuarios': Usuario.objects.all().order_by('nombre'),
@@ -707,35 +697,23 @@ def panel_administrador(request):
     })
 
 
-
 # =========================================================================
 # 8. Reservar un turno
 # =========================================================================
 @login_requerido
 def agendar_cita(request):
     usuario = usuario_de_sesion(request)
-    ahora = ahora_local()
 
     if request.method == 'POST':
-        id_turno = entero(request.POST.get('turno_id'))
         servicio = Servicio.objects.filter(id_servicio=entero(request.POST.get('servicio_elegido'))).first()
 
         if servicio is None:
             messages.error(request, 'Elige un servicio válido.')
         else:
             try:
-                # El bloqueo evita que dos personas reserven el mismo turno al mismo tiempo
-                with transaction.atomic():
-                    cita = Cita.objects.select_for_update().get(id_cita=id_turno, observaciones=LIBRE, estado='pendiente')
-                    if momento_cita(cita) < ahora:
-                        raise ValueError('El turno ya pasó')
-                    cita.id_cliente = usuario
-                    # El precio lo pone el servidor, no el formulario
-                    cita.observaciones = f"{servicio.nombre_servicio}|{int(servicio.precio)}"
-                    cita.estado = 'pendiente'
-                    cita.save(update_fields=['id_cliente', 'observaciones', 'estado'])
-            except (Cita.DoesNotExist, ValueError):
-                messages.error(request, 'Ese turno ya no está disponible. Elige otro horario.')
+                cita = services.reservar_turno(usuario, entero(request.POST.get('turno_id')), servicio)
+            except ReglaDeNegocio as error:
+                messages.error(request, str(error))
             except Exception:
                 logger.exception('Error al reservar un turno')
                 messages.error(request, 'No pudimos completar tu reserva. Inténtalo de nuevo.')
@@ -748,11 +726,11 @@ def agendar_cita(request):
                     f'Reservaste {servicio.nombre_servicio} con {barbero.nombre} {barbero.apellido} '
                     f'el {fecha} a las {hora}. Total: ${pesos(servicio.precio)} COP. '
                     'Tu cita queda pendiente de confirmación.',
-                    extra_tags='modal',
                 )
                 return redirect('panel_cliente')
         return redirect('agendar_cita')
 
+    ahora = ahora_local()
     turnos = [
         c for c in Cita.objects.select_related('id_barbero__id_usuario')
         .filter(observaciones=LIBRE, estado='pendiente', fecha__gte=ahora.date())
@@ -801,6 +779,8 @@ def pantalla_contacto(request):
 def cerrar_sesion(request):
     request.session.flush()
     return redirect('inicio')
+
+
 
 # =========================================================================
 # 10. ASISTENTE DE ESTILO
@@ -975,15 +955,126 @@ def asistente_estilo(request):
     }
     return render(request, 'asistente_estilo.html', contexto)
 
+
+
 # =========================================================================
-# CANCELAR CITA
+# 11. Estadísticas personales (panel del barbero y panel del cliente)
 # =========================================================================
-def cancelar_y_liberar(cita):
-    """Cancela la cita y vuelve a publicar su horario como turno libre."""
-    with transaction.atomic():
-        cita.estado = 'cancelada'
-        cita.save(update_fields=['estado'])
-        Cita.objects.create(
-            fecha=cita.fecha, hora=cita.hora, estado='pendiente',
-            observaciones=LIBRE, id_cliente=usuario_comodin(), id_barbero=cita.id_barbero,
-        )
+DIAS_CORTOS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
+
+def _ultimos_seis_meses(fin):
+    """Los 6 meses que terminan en el mes de `fin`, del más viejo al más nuevo: [(2026, 6), ...]."""
+    meses = []
+    anio, mes = fin.year, fin.month
+    for _ in range(6):
+        meses.append((anio, mes))
+        mes -= 1
+        if mes == 0:
+            mes = 12
+            anio -= 1
+    meses.reverse()
+    return meses
+
+
+def _grafica(clave, icono, titulo, descripcion, tipo, etiquetas, valores, vacio, formato='numero', color='dorado'):
+    """Describe una gráfica; la plantilla _mis_estadisticas.html las dibuja todas con el mismo código."""
+    return {
+        'id': clave, 'icono': icono, 'titulo': titulo, 'descripcion': descripcion, 'tipo': tipo,
+        'etiquetas': list(etiquetas), 'valores': list(valores), 'vacio': vacio,
+        'formato': formato, 'color': color,
+    }
+
+
+def _resumen_citas(citas):
+    """Cuentas que comparten el barbero y el cliente. `citas` son citas reales (sin turnos libres)."""
+    atendidas = [c for c in citas if c.estado == 'atendida']
+    activas = [c for c in citas if c.estado != 'cancelada']
+    por_estado = [sum(1 for c in citas if c.estado == e) for e in ('pendiente', 'confirmada', 'atendida', 'cancelada')]
+
+    fin = max([timezone.localdate()] + [c.fecha for c in atendidas])
+    meses = _ultimos_seis_meses(fin)
+    dinero_por_mes = {clave: 0 for clave in meses}
+    for c in atendidas:
+        clave = (c.fecha.year, c.fecha.month)
+        if clave in dinero_por_mes:
+            dinero_por_mes[clave] += precio_cita(c)
+
+    return {
+        'atendidas': atendidas,
+        'activas': activas,
+        'por_estado': por_estado,
+        'meses': meses,
+        'dinero_por_mes': dinero_por_mes,
+        'dinero_mes_actual': dinero_por_mes.get((fin.year, fin.month), 0),
+        'dinero_total': sum(precio_cita(c) for c in atendidas),
+        'tasa_cancelacion': round(por_estado[3] * 100 / len(citas)) if citas else 0,
+    }
+
+
+def estadisticas_barbero(citas):
+    """Números y gráficas del panel del barbero."""
+    r = _resumen_citas(citas)
+    servicios = Counter(c.nombre_limpio_servicio for c in r['activas'] if c.nombre_limpio_servicio).most_common(5)
+    por_dia = Counter(c.fecha.weekday() for c in r['activas'])
+
+    return {
+        'tarjetas': [
+            {'etiqueta': 'Ingresos del mes', 'valor': '$' + pesos(r['dinero_mes_actual']), 'unidad': 'COP'},
+            {'etiqueta': 'Citas atendidas', 'valor': len(r['atendidas'])},
+            {'etiqueta': 'Clientes atendidos', 'valor': len({c.id_cliente_id for c in r['atendidas']})},
+            {'etiqueta': 'Tasa de cancelación', 'valor': f"{r['tasa_cancelacion']}%"},
+        ],
+        'graficas': [
+            _grafica('dinero', 'i-banknote', 'Ingresos por mes', 'Citas atendidas de los últimos 6 meses.', 'barras',
+                     [f"{MESES_CORTOS[m - 1]} {a}" for (a, m) in r['meses']],
+                     [r['dinero_por_mes'][k] for k in r['meses']],
+                     'Aún no tienes citas atendidas para mostrar ingresos.', formato='dinero'),
+            _grafica('servicios', 'i-scissors', 'Servicios más pedidos', 'Sin contar las citas canceladas.', 'barras_horizontales',
+                     [s[0] for s in servicios], [s[1] for s in servicios],
+                     'Aún no hay reservas para mostrar.', color='rojo'),
+            _grafica('estados', 'i-calendar-check', 'Citas por estado', 'Cómo van todas tus reservas.', 'dona',
+                     ['Pendientes', 'Confirmadas', 'Atendidas', 'Canceladas'], r['por_estado'],
+                     'Aún no hay citas para mostrar.'),
+            _grafica('dias', 'i-calendar', 'Citas por día de la semana', 'Para saber qué días tienes más reservas.', 'barras',
+                     DIAS_CORTOS, [por_dia.get(i, 0) for i in range(7)],
+                     'Aún no hay reservas para mostrar.', color='salvia'),
+        ],
+    }
+
+
+def estadisticas_cliente(citas):
+    """Números y gráficas del panel del cliente (se usa en el siguiente paso)."""
+    r = _resumen_citas(citas)
+
+    def nombre_barbero(c):
+        return f"{c.id_barbero.id_usuario.nombre} {c.id_barbero.id_usuario.apellido}"
+
+    servicios = Counter(c.nombre_limpio_servicio for c in r['activas'] if c.nombre_limpio_servicio).most_common(5)
+    barberos = Counter(nombre_barbero(c) for c in r['activas']).most_common(6)
+    servicio_fav = Counter(c.nombre_limpio_servicio for c in r['atendidas'] if c.nombre_limpio_servicio).most_common(1)
+    barbero_fav = Counter(nombre_barbero(c) for c in r['atendidas']).most_common(1)
+
+    return {
+        'tarjetas': [
+            {'etiqueta': 'Gastado en total', 'valor': '$' + pesos(r['dinero_total']), 'unidad': 'COP'},
+            {'etiqueta': 'Citas atendidas', 'valor': len(r['atendidas'])},
+            {'etiqueta': 'Servicio favorito', 'valor': servicio_fav[0][0] if servicio_fav else '—'},
+            {'etiqueta': 'Barbero favorito', 'valor': barbero_fav[0][0] if barbero_fav else '—'},
+        ],
+        'graficas': [
+            _grafica('dinero', 'i-banknote', 'Gasto por mes', 'Citas atendidas de los últimos 6 meses.', 'barras',
+                     [f"{MESES_CORTOS[m - 1]} {a}" for (a, m) in r['meses']],
+                     [r['dinero_por_mes'][k] for k in r['meses']],
+                     'Aún no tienes citas atendidas.', formato='dinero'),
+            _grafica('servicios', 'i-scissors', 'Servicios que más pides', 'Sin contar las citas canceladas.', 'barras_horizontales',
+                     [s[0] for s in servicios], [s[1] for s in servicios],
+                     'Aún no tienes reservas.', color='rojo'),
+            _grafica('estados', 'i-calendar-check', 'Mis citas por estado', 'Cómo van todas tus reservas.', 'dona',
+                     ['Pendientes', 'Confirmadas', 'Atendidas', 'Canceladas'], r['por_estado'],
+                     'Aún no tienes citas.'),
+            _grafica('barberos', 'i-users', 'Mis barberos', 'Citas con cada barbero, sin contar las canceladas.', 'barras',
+                     [b[0] for b in barberos], [b[1] for b in barberos],
+                     'Aún no tienes reservas.', color='salvia'),
+        ],
+    }
