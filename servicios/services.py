@@ -1,7 +1,7 @@
 """
 Reglas de negocio de la barbería.
 
-Aquí se decide qué se puede hacer y qué no (reservar, cancelar, cambiar un rol...).
+Aquí se decide qué se puede hacer y qué no (reservar, cancelar, cambiar un rol...) y se avisa por correo.
 Las vistas (views.py) solo reciben la petición, llaman a estas funciones y muestran el resultado.
 """
 import datetime
@@ -9,6 +9,7 @@ import datetime
 from django.db import transaction
 from django.utils import timezone
 
+from servicios import correos
 from servicios.models import Barbero, Cita, Usuario
 
 ROLES_VALIDOS = ('cliente', 'barbero', 'administrador')
@@ -45,7 +46,7 @@ def usuario_comodin():
 # Citas
 # =========================================================================
 def reservar_turno(cliente, id_turno, servicio):
-    """Reserva un turno libre para el cliente y devuelve la cita.
+    """Reserva un turno libre para el cliente, le avisa por correo y devuelve la cita.
 
     El bloqueo (select_for_update) evita que dos personas reserven el mismo turno al mismo tiempo.
     El precio lo pone el servidor, nunca el formulario.
@@ -63,6 +64,8 @@ def reservar_turno(cliente, id_turno, servicio):
             cita.save(update_fields=['id_cliente', 'observaciones', 'estado'])
     except Cita.DoesNotExist:
         raise ReglaDeNegocio(MENSAJE_TURNO_NO_DISPONIBLE)
+
+    correos.cita_reservada(cita)
     return cita
 
 
@@ -78,15 +81,17 @@ def _cambiar_estado(cita, desde, hacia):
 
 
 def confirmar_cita(cita):
-    return _cambiar_estado(cita, 'pendiente', 'confirmada')
+    actual = _cambiar_estado(cita, 'pendiente', 'confirmada')
+    correos.cita_confirmada(actual)
+    return actual
 
 
 def atender_cita(cita):
     return _cambiar_estado(cita, 'confirmada', 'atendida')
 
 
-def cancelar_y_liberar(cita):
-    """Cancela la cita y vuelve a publicar su horario como turno libre."""
+def cancelar_y_liberar(cita, por_cliente=False):
+    """Cancela la cita, vuelve a publicar su horario como turno libre y le avisa por correo al cliente."""
     with transaction.atomic():
         actual = Cita.objects.select_for_update().get(pk=cita.pk)
         if actual.estado not in ('pendiente', 'confirmada'):
@@ -97,6 +102,8 @@ def cancelar_y_liberar(cita):
             fecha=actual.fecha, hora=actual.hora, estado='pendiente',
             observaciones=LIBRE, id_cliente=usuario_comodin(), id_barbero=actual.id_barbero,
         )
+
+    correos.cita_cancelada(actual, por_cliente=por_cliente)
     return actual
 
 
@@ -116,7 +123,7 @@ def cancelar_cita_cliente(cliente, id_cita):
             f'Solo puedes cancelar hasta {HORAS_MIN_CANCELAR} horas antes de la cita. '
             'Si necesitas ayuda, comunícate con la barbería.'
         )
-    return cancelar_y_liberar(cita)
+    return cancelar_y_liberar(cita, por_cliente=True)
 
 
 # =========================================================================
