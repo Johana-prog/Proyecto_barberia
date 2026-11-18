@@ -126,3 +126,17 @@ def cita_cancelada(cita, por_cliente=False):
         cierre = 'Puedes reservar otro horario desde nuestra página, o escribirnos y te ayudamos a reprogramar.'
     cuerpo = f"Hola, {d['nombre']}.\n\n{intro}\n\n{_resumen(d)}\n\n{cierre}{FIRMA}"
     _enviar(d['correo'], f'Tu cita fue cancelada - {NEGOCIO}', cuerpo)
+
+
+
+@_seguro
+def recuperar_clave(usuario, enlace, minutos):
+    cuerpo = (
+        f"Hola, {usuario.nombre}.\n\n"
+        "Recibimos una solicitud para restablecer la contraseña de tu cuenta.\n\n"
+        f"Abre este enlace para elegir una nueva (vale {minutos} minutos y solo se puede usar una vez):\n"
+        f"{enlace}\n\n"
+        "Si no fuiste tú, ignora este mensaje: tu contraseña actual sigue funcionando."
+        + FIRMA
+    )
+    _enviar(usuario.correo, f'Restablece tu contraseña - {NEGOCIO}', cuerpo)

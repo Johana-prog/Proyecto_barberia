@@ -1,0 +1,26 @@
+{% extends 'auth_base.html' %}
+{% block titulo %}Recuperar contraseña - Usme Barber Top{% endblock %}
+{% block formulario %}
+    <h1 class="auth-titulo">Recuperar contraseña</h1>
+    <p class="auth-sub">Escribe tu correo y te enviamos un enlace para elegir una nueva</p>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="campo" style="margin-bottom: 24px;">
+            <label for="correo">Correo</label>
+            <div class="campo-icono">
+                <svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg>
+                <input type="email" id="correo" name="correo" class="input" placeholder="tucorreo@ejemplo.com" autocomplete="email" required autofocus>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primario btn-block">
+            <svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg>Enviar enlace
+        </button>
+    </form>
+
+    <div class="auth-pie">
+        <a href="/login/" class="auth-volver">← Volver a iniciar sesión</a>
+    </div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'auth_base.html' %}
+{% block titulo %}Nueva contraseña - Usme Barber Top{% endblock %}
+{% block formulario %}
+    <h1 class="auth-titulo">Elige tu nueva contraseña</h1>
+    <p class="auth-sub">Mínimo 8 caracteres</p>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="campo">
+            <label for="clave">Nueva contraseña</label>
+            <div class="campo-icono">
+                <svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg>
+                <input type="password" id="clave" name="clave" class="input" minlength="8" autocomplete="new-password" required autofocus>
+            </div>
+        </div>
+
+        <div class="campo" style="margin-bottom: 24px;">
+            <label for="clave2">Repite la contraseña</label>
+            <div class="campo-icono">
+                <svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg>
+                <input type="password" id="clave2" name="clave2" class="input" minlength="8" autocomplete="new-password" required>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primario btn-block">
+            <svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Guardar contraseña
+        </button>
+    </form>
+
+    <div class="auth-pie">
+        <a href="/login/" class="auth-volver">← Volver a iniciar sesión</a>
+    </div>
+{% endblock %}

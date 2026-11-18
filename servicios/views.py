@@ -1085,3 +1085,39 @@ def estadisticas_cliente(citas):
                      'Aún no tienes reservas.', color='salvia'),
         ],
     }
+
+
+
+# =========================================================================
+# 12. Recuperar la contraseña
+# =========================================================================
+def olvide_clave(request):
+    if request.method == 'POST':
+        services.pedir_recuperacion(
+            request.POST.get('correo'),
+            lambda token: request.build_absolute_uri(reverse('nueva_clave', args=[token])),
+        )
+        # Siempre el mismo mensaje, exista o no el correo
+        messages.success(
+            request,
+            'Si ese correo está registrado, te enviamos un enlace para elegir una nueva contraseña. '
+            'Revisa también la carpeta de spam.',
+        )
+        return redirect('login')
+    return render(request, 'olvide_clave.html')
+
+
+def nueva_clave(request, token):
+    if services.usuario_desde_token(token) is None:
+        messages.error(request, 'Este enlace ya no sirve: venció o ya se usó. Pide uno nuevo.')
+        return redirect('olvide_clave')
+
+    if request.method == 'POST':
+        try:
+            services.restablecer_clave(token, request.POST.get('clave') or '', request.POST.get('clave2') or '')
+        except ReglaDeNegocio as error:
+            messages.error(request, str(error))
+        else:
+            messages.success(request, 'Listo: tu contraseña cambió. Ya puedes iniciar sesión.')
+            return redirect('login')
+    return render(request, 'nueva_clave.html')

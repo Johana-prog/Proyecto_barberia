@@ -1,13 +1,17 @@
 """
 Reglas de negocio de la barbería.
 
-Aquí se decide qué se puede hacer y qué no (reservar, cancelar, cambiar un rol...) y se avisa por correo.
-Las vistas (views.py) solo reciben la petición, llaman a estas funciones y muestran el resultado.
+Aquí se decide qué se puede hacer y qué no (reservar, cancelar, cambiar un rol, recuperar una contraseña...)
+y se avisa por correo. Las vistas (views.py) solo reciben la petición, llaman a estas funciones y muestran
+el resultado.
 """
 import datetime
 
+from django.contrib.auth.hashers import make_password
+from django.core import signing
 from django.db import transaction
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare, salted_hmac
 
 from servicios import correos
 from servicios.models import Barbero, Cita, Usuario
@@ -166,7 +170,12 @@ def eliminar_turno_libre(barbero, id_cita):
 # Usuarios y roles
 # =========================================================================
 def _quedan_otros_administradores(objetivo):
-    return Usuario.objects.filter(rol='administrador', estado=1).exclude(pk=objetivo.pk).exists()
+    return (
+        Usuario.objects.filter(rol='administrador')
+        .exclude(estado=0)
+        .exclude(pk=objetivo.pk)
+        .exists()
+    )
 
 
 def cambiar_rol(quien, objetivo, nuevo):
@@ -200,3 +209,58 @@ def cambiar_estado_usuario(quien, objetivo, activar):
     objetivo.estado = 1 if activar else 0
     objetivo.save(update_fields=['estado'])
     return objetivo
+
+
+# =========================================================================
+# Recuperar la contraseña (enlace por correo)
+# =========================================================================
+MINUTOS_ENLACE_CLAVE = 60
+LARGO_MINIMO_CLAVE = 8
+_SAL_RECUPERACION = 'servicios.recuperar_clave'
+
+
+def _huella_clave(usuario):
+    """Marca que cambia cuando cambia la contraseña: así un enlace ya usado deja de servir."""
+    return salted_hmac(_SAL_RECUPERACION, usuario.contraseña or '').hexdigest()[:20]
+
+
+def _crear_token(usuario):
+    return signing.dumps({'u': usuario.id_usuario, 'h': _huella_clave(usuario)}, salt=_SAL_RECUPERACION)
+
+
+def usuario_desde_token(token):
+    """Dueño del enlace, o None si el enlace es falso, venció o ya se usó."""
+    try:
+        datos = signing.loads(token, salt=_SAL_RECUPERACION, max_age=MINUTOS_ENLACE_CLAVE * 60)
+    except signing.BadSignature:      # también cubre los enlaces vencidos
+        return None
+    usuario = Usuario.objects.filter(id_usuario=datos.get('u')).exclude(estado=0).first()
+    if usuario is None or not constant_time_compare(datos.get('h', ''), _huella_clave(usuario)):
+        return None
+    return usuario
+
+
+def pedir_recuperacion(correo, construir_enlace):
+    """Si el correo es de una cuenta activa, le envía el enlace.
+
+    No devuelve nada a propósito: así nadie puede descubrir qué correos están registrados.
+    """
+    usuario = Usuario.objects.filter(correo__iexact=(correo or '').strip()).exclude(estado=0).first()
+    if usuario is None:
+        return
+    enlace = construir_enlace(_crear_token(usuario))
+    correos.recuperar_clave(usuario, enlace, MINUTOS_ENLACE_CLAVE)
+
+
+def restablecer_clave(token, nueva, confirmacion):
+    """Guarda la nueva contraseña (cifrada) si el enlace sirve y las dos coinciden."""
+    usuario = usuario_desde_token(token)
+    if usuario is None:
+        raise ReglaDeNegocio('Este enlace ya no sirve: venció o ya se usó. Pide uno nuevo.')
+    if len(nueva) < LARGO_MINIMO_CLAVE:
+        raise ReglaDeNegocio(f'La contraseña debe tener mínimo {LARGO_MINIMO_CLAVE} caracteres.')
+    if nueva != confirmacion:
+        raise ReglaDeNegocio('Las contraseñas no coinciden.')
+    usuario.contraseña = make_password(nueva)
+    usuario.save(update_fields=['contraseña'])
+    return usuario
