@@ -45,3 +45,58 @@ Autoría: [Tu nombre]
 - Chart.js para las gráficas
 
 ## Estructura
+
+```
+barberia/        configuración del proyecto (settings, urls) y plantillas HTML
+servicios/       aplicación principal
+  models.py      modelos de la base de datos
+  views.py       vistas: reciben la petición y muestran el resultado
+  services.py    reglas de negocio (reservar, cancelar, roles, recuperar contraseña)
+  correos.py     mensajes de correo
+  storage.py     almacenamiento de fotos en Cloudinary
+static/          estilos, imágenes y scripts
+```
+
+## Instalación local
+
+1. Clona el repositorio e instala las dependencias:
+
+   ```
+   git clone https://github.com/Johana-prog/Proyecto_barberia.git
+   cd Proyecto_barberia
+   pip install -r requirements.txt
+   ```
+
+2. Crea la base de datos MySQL `gestorbarberia` e importa las tablas desde MySQL Workbench. Las tablas se crean fuera de Django (`managed = False`).
+
+3. Copia `.env.example` como `.env` y completa los valores (clave secreta, base de datos, Cloudinary y correo). El archivo `.env` nunca se sube al repositorio.
+
+4. Inicia el servidor:
+
+   ```
+   python manage.py runserver
+   ```
+
+## Variables de entorno
+
+| Variable | Para qué sirve |
+| --- | --- |
+| `SECRET_KEY` | Clave secreta de Django |
+| `DEBUG` | `True` solo en desarrollo |
+| `ALLOWED_HOSTS` | Direcciones permitidas, separadas por comas |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | Conexión a MySQL |
+| `DB_SSL` | `True` para exigir conexión cifrada (Azure) |
+| `CLOUDINARY_URL` | Credenciales de Cloudinary; sin ella, las fotos se guardan en `media/` |
+| `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | Cuenta y contraseña de aplicación para enviar correos; sin ellas, los correos se imprimen en la terminal |
+
+## Roles
+
+| Rol | Acceso |
+| --- | --- |
+| Cliente | Reservas, su agenda y sus estadísticas |
+| Barbero | Su agenda, su portafolio y sus estadísticas |
+| Administrador | Citas, usuarios, tarifas y estadísticas generales |
+
+## Despliegue
+
+El proyecto incluye `requirements.txt` y un `Dockerfile`. En producción se sirve con Gunicorn, los archivos estáticos con WhiteNoise y las fotos desde Cloudinary.
